@@ -3,9 +3,10 @@ def _compute_str_eq(coeffs, index):
     terms = []
     label = "x" if index == 0 else "t"
     terms += [
-        None if coef == 0 else "{:+}".format(coef) + "U" + label * idx
-        for idx, coef in enumerate(coeffs[1:])
+        None if coef == 0 else "{:+}".format(coef) + "U" + label * (idx+1)
+        for idx, coef in enumerate(coeffs[2:])
     ]
+    terms = '0' if terms == [] else terms
     terms = list(filter(lambda item: item is not None, terms))
     terms = " ".join(reversed(terms))
     return terms
@@ -27,3 +28,11 @@ def _compute_str_cond(domain, boundary, idx):
     idx = "BC: " if idx == "x" else "IC: "
     bc_str = idx + bc_str
     return bc_str
+
+
+def _sum_sides(equation, idx):
+    constant = equation[0][idx] - equation[1][idx]
+    constant = " " + "{:+}".format(constant) if constant != 0 else ""
+    if idx == 1 and constant != "":
+        constant += "U"
+    return constant
