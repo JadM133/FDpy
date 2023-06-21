@@ -1,5 +1,7 @@
 from fd_problem import Fd_problem
 import pytest
+from utils import _equ_to_exprlist
+from expressionlist import ExpressionList
 
 
 @pytest.mark.parametrize(
@@ -45,3 +47,92 @@ def test_str(domain, interval, boundary, initial, method, equation, str_val):
         str(Fd_problem(domain, interval, boundary, initial, method, equation))
         == str_val
     ), "Incorrect return value from __str__"
+
+
+@pytest.mark.parametrize(
+    "eq, method1, methodn, dx, dt, resultx, resultt",
+    [
+        (
+            ((0, 1, 1, 0, 0, 1), (0, 0, 2, 3)),
+            ("for", "cen"),
+            ("for", "cen"),
+            0.1,
+            0.1,
+            {
+                0: -20000 + 1 - 10,
+                1: 30000 + 10,
+                -1: 30000,
+                2: -30000,
+                -2: -30000,
+                3: 10000,
+                -3: 10000,
+            },
+            {
+                -1: 300,
+                0: -20 - 600,
+                1: 20 + 300,
+            },
+        ),
+        (
+            ((0, 0, 0, 1), (0, 0, 0, 2)),
+            ("for", "cen"),
+            ("for", "cen"),
+            0.1,
+            0.1,
+            {0: -200, -1: 100, 1: 100},
+            {0: -400, -1: 200, 1: 200},
+        ),
+        (
+            ((0, 0, 0, 1), (0, 0, 0, 1)),
+            ("for", "bac"),
+            ("for", "for"),
+            0.1,
+            0.1,
+            {0: 100, -1: -200, -2: 100},
+            {0: 100, 1: -200, 2: 100},
+        ),
+        (
+            ((0, 1, 0, 0), (0, 0, 1)),
+            ("for", "cen"),
+            ("cen", "cen"),
+            0.1,
+            0.1,
+            {0: 1},
+            {1: 5, -1: -5},
+        ),
+        (
+            ((0, 0, 1, 0), (0, 0, 1)),
+            ("for", "cen"),
+            ("bac", "cen"),
+            0.1,
+            0.1,
+            {0: -10, 1: 10},
+            {-1: -10, 0: 10},
+        ),
+        (
+            ((0, 0, 0, 0, 0, 1), (0, 0, 1)),
+            ("for", "cen"),
+            ("for", "cen"),
+            0.1,
+            0.2,
+            {
+                0: -20000,
+                1: 30000,
+                -1: 30000,
+                2: -30000,
+                -2: -30000,
+                3: 10000,
+                -3: 10000,
+            },
+            {0: -5, 1: 5},
+        ),
+    ],
+)
+def test_equ_to_exprlist(eq, method1, methodn, dx, dt, resultx, resultt):
+    act_result = _equ_to_exprlist(eq, method1, methodn, dx, dt)
+    act_x, act_t = act_result
+    true_x = ExpressionList(resultx)
+    true_t = ExpressionList(resultt)
+    assert (act_x == true_x) and (
+        act_t == true_t
+    ), f"expected {true_x, true_t} but got {act_result}"

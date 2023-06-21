@@ -1,4 +1,4 @@
-from expressions import expressions
+from expressions import expressions, Expressions, Number
 from functools import singledispatch
 
 
@@ -16,6 +16,8 @@ class TreeNode:
 
 
 def postvisitor(expr, fn, **kwargs):
+    if not isinstance(expr, Expressions):
+        expr = Number(expr)
     return fn(expr,
               *(postvisitor(c, fn, **kwargs) for c in expr.operands),
               **kwargs)

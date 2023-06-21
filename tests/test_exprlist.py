@@ -63,6 +63,7 @@ def test_div(d1, d2, div_val):
 def test_call(d1, x_val, call_val):
     d1 = ExpressionList(d1)
     val = d1(x_val, x)
+    call_val = ExpressionList(call_val)
     assert val == call_val, f"expected {call_val} but got {val}"
 
 

@@ -1,5 +1,6 @@
 from expressions import Symbol
 from expressionlist import ExpressionList
+import numpy as np
 
 
 def _compute_str_eq(coeffs, index):
@@ -42,22 +43,22 @@ def _sum_sides(equation, idx):
     return constant
 
 
-def _equ_to_exprlist(equation, methods=["for", "for"]):
+def _x_or_t_to_epxrlist(equation, methods, step_size):
     res_list = []
-    equation_x = equation[0]
-    res_list.append(ExpressionList({1: equation_x[1]}))
-    dx = Symbol("dx")
 
-    ux_back = ExpressionList({0: 1 / dx, -1: -1 / dx})
-    ux_for = ExpressionList({1: 1 / dx, 0: -1 / dx})
-    ux_cen = ExpressionList({1: 1 / (2 * dx), -1: -1 / (2 * dx)})
+    res_list.append(ExpressionList({0: equation[1]}))
+    inc = Symbol("inc")
+
+    ux_back = ExpressionList({0: 1 / inc, -1: -1 / inc})
+    ux_for = ExpressionList({1: 1 / inc, 0: -1 / inc})
+    ux_cen = ExpressionList({1: 1 / (2 * inc), -1: -1 / (2 * inc)})
 
     if methods[0] == "for":
-        res_list.append(ux_for*equation_x[2])
+        res_list.append(ux_for * equation[2])
     elif methods[0] == "bac":
-        res_list.append(ux_back*equation_x[2])
-    elif methods[0] == "center":
-        res_list.append(ux_cen*equation_x[2])
+        res_list.append(ux_back * equation[2])
+    elif methods[0] == "cen":
+        res_list.append(ux_cen * equation[2])
     else:
         raise NotImplementedError(
             f"Method {methods[0]} not implemented for first derivatives"
@@ -66,17 +67,17 @@ def _equ_to_exprlist(equation, methods=["for", "for"]):
     u_n_minus_1_for = ux_for
     u_n_minus_1_bac = ux_back
 
-    for n in range(len(equation[0]) - 3):
-        u_n_for = (u_n_minus_1_for.inc() - u_n_minus_1_for) / dx
-        u_n_bac = (u_n_minus_1_bac - u_n_minus_1_bac.dec()) / dx
-        u_n_cen = (u_n_minus_1_for - u_n_minus_1_bac) / dx
+    for n in range(len(equation) - 3):
+        u_n_for = (u_n_minus_1_for.inc() - u_n_minus_1_for) / inc
+        u_n_bac = (u_n_minus_1_bac - u_n_minus_1_bac.dec()) / inc
+        u_n_cen = (u_n_minus_1_for - u_n_minus_1_bac) / inc
 
         if methods[1] == "for":
-            res_list.append(u_n_for*equation_x[n+3])
+            res_list.append(u_n_for * equation[n + 3])
         elif methods[1] == "bac":
-            res_list.append(u_n_bac*equation_x[n+3])
-        elif methods[1] == "center":
-            res_list.append(u_n_cen*equation_x[n+3])
+            res_list.append(u_n_bac * equation[n + 3])
+        elif methods[1] == "cen":
+            res_list.append(u_n_cen * equation[n + 3])
         else:
             raise NotImplementedError
 
@@ -88,5 +89,24 @@ def _equ_to_exprlist(equation, methods=["for", "for"]):
             sum_n = res_list[idx]
         else:
             sum_n += res_list[idx]
-    sum_n = sum_n(dx=0.1)
-    print(sum_n)
+    sum_n = sum_n(step_size, inc)
+    return sum_n
+
+
+def _equ_to_exprlist(
+    equation, method_x=["for", "for"],
+    method_y=["for", "for"],
+    dx_val=0.1,
+    dt_val=0.1
+):
+    mat_x = _x_or_t_to_epxrlist(equation[0], method_x, dx_val)
+    mat_y = _x_or_t_to_epxrlist(equation[1], method_y, dt_val)
+    return mat_x, mat_y
+
+
+def _exprlist_to_mat(mat_entries, time="imp"):
+    x_entries, t_entries = mat_entries
+    mat_dict, rhs_dict = x_entries.combine_x_and_t(t_entries, time)
+    mat_array = np.array(mat_dict.items())
+    rhs_array = np.array(rhs_dict.items())
+    return mat_array, rhs_array

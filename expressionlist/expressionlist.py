@@ -15,7 +15,10 @@ class ExpressionList:
     def __add__(self, other):
         d1 = self.expr_list
         d2 = other.expr_list
-        d_added = {k: d1.get(k, 0) + d2.get(k, 0) for k in (d1.keys() | d2.keys())}
+        d_added = {
+            k_val: d1.get(k_val, 0) + d2.get(k_val, 0)
+            for k_val in (d1.keys() | d2.keys())
+        }
         return ExpressionList(d_added)
 
     def __mul__(self, other):
@@ -29,7 +32,10 @@ class ExpressionList:
     def __sub__(self, other):
         d1 = self.expr_list
         d2 = other.expr_list
-        d_sub = {k: d1.get(k, 0) - d2.get(k, 0) for k in (d1.keys() | d2.keys())}
+        d_sub = {
+            k_val: d1.get(k_val, 0) - d2.get(k_val, 0)
+            for k_val in (d1.keys() | d2.keys())
+        }
         return ExpressionList(d_sub)
 
     def __truediv__(self, other):
@@ -43,10 +49,13 @@ class ExpressionList:
     def __call__(self, val, symb):
         name = str(symb)
         expr = self.expr_list
-        expr = {
-            k: postvisitor(expr.get(k), evaluate, symbol_map={name: val})
-            for k in expr.keys()
-        }
+        expr = ExpressionList(
+            {
+                k: postvisitor(expr.get(k), evaluate, symbol_map={name: val})
+                for k in expr.keys()
+            }
+        )
+        expr.clean()
         return expr
 
     def __eq__(self, other):
@@ -59,3 +68,22 @@ class ExpressionList:
 
     def dec(self, increment=1):
         return self.inc(-increment)
+
+    def clean(self, val=0):
+        self.expr_list = {k: v for k, v in self.expr_list.items() if v != val}
+
+    def combine_x_and_t(self, other, time):
+        t_dict = other.expr_list
+        k_max = max(k for k, v in t_dict.items())
+        if time == "imp":
+            t_max = ExpressionList({k_max: t_dict.get(k_max)})
+            mat_dict = (t_max - self).expr_list
+            del t_dict[k_max]
+            rhs_dict = -t_dict
+            return mat_dict, rhs_dict
+        elif time == "exp":
+            mat_dict = {k_max: t_dict.get(k_max)}
+            del t_dict[k_max]
+            rhs_dict = (self - ExpressionList(t_dict)).expr_list
+        else:
+            raise NotImplementedError
