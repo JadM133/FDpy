@@ -1,6 +1,5 @@
 from expressions import expressions
 from functools import singledispatch
-from expressions.expressions import Symbol
 
 
 class TreeNode:
@@ -56,3 +55,16 @@ def _(expr, *o, **kwargs):
 @evaluate.register(expressions.Div)
 def _(expr, *o, **kwargs):
     return o[0] / o[1]
+
+
+@evaluate.register(expressions.Pow)
+def _(expr, *o, **kwargs):
+    return o[0] ** o[1]
+
+
+@evaluate.register(expressions.F)
+def _(expr, *o, **kwargs):
+    fac = 1
+    for num in range(o[0]):
+        fac *= num+1
+    return fac

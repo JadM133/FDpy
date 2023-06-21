@@ -1,12 +1,16 @@
+from expressions import Symbol
+from expressionlist import ExpressionList
+
+
 def _compute_str_eq(coeffs, index):
     coeffs = coeffs[index]
     terms = []
     label = "x" if index == 0 else "t"
     terms += [
-        None if coef == 0 else "{:+}".format(coef) + "U" + label * (idx+1)
+        None if coef == 0 else "{:+}".format(coef) + "U" + label * (idx + 1)
         for idx, coef in enumerate(coeffs[2:])
     ]
-    terms = '0' if terms == [] else terms
+    terms = "0" if terms == [] else terms
     terms = list(filter(lambda item: item is not None, terms))
     terms = " ".join(reversed(terms))
     return terms
@@ -36,3 +40,86 @@ def _sum_sides(equation, idx):
     if idx == 1 and constant != "":
         constant += "U"
     return constant
+
+
+def _equ_to_exprlist(equation, methods=["for", "for"]):
+    res_list = []
+    equation_x = equation[0]
+    res_list.append(ExpressionList({1: equation_x[1]}))
+    dx = Symbol("dx")
+
+    ux_back = ExpressionList({0: 1 / dx, -1: -1 / dx})
+    ux_for = ExpressionList({1: 1 / dx, 0: -1 / dx})
+    ux_cen = ExpressionList({1: 1 / (2 * dx), -1: -1 / (2 * dx)})
+
+    if methods[0] == "for":
+        res_list.append(ux_for*equation_x[2])
+    elif methods[0] == "bac":
+        res_list.append(ux_back*equation_x[2])
+    elif methods[0] == "center":
+        res_list.append(ux_cen*equation_x[2])
+    else:
+        raise NotImplementedError(
+            f"Method {methods[0]} not implemented for first derivatives"
+        )
+
+    u_n_minus_1_for = ux_for
+    u_n_minus_1_bac = ux_back
+
+    for n in range(len(equation[0]) - 3):
+        u_n_for = (u_n_minus_1_for.inc() - u_n_minus_1_for) / dx
+        u_n_bac = (u_n_minus_1_bac - u_n_minus_1_bac.dec()) / dx
+        u_n_cen = (u_n_minus_1_for - u_n_minus_1_bac) / dx
+
+        if methods[1] == "for":
+            res_list.append(u_n_for*equation_x[n+3])
+        elif methods[1] == "bac":
+            res_list.append(u_n_bac*equation_x[n+3])
+        elif methods[1] == "center":
+            res_list.append(u_n_cen*equation_x[n+3])
+        else:
+            raise NotImplementedError
+
+        u_n_minus_1_for = u_n_for
+        u_n_minus_1_bac = u_n_bac
+
+    for idx in range(len(res_list)):
+        if idx == 0:
+            sum_n = res_list[idx]
+        else:
+            sum_n += res_list[idx]
+    sum_n = sum_n(dx=0.1)
+    print(sum_n)
+    # n = Symbol("n")
+    # i = Symbol("i")
+    # dx = Symbol("dx")
+    # cte_expr = (-1) ** (n - i) * (F(n) / (F(i) * F(n - i)))
+    # idx_expr = n / 2 - i
+    # for n in range(len(equation) - 2):
+    #     fn_list = []
+    #     if methods[n+1] == "for":
+    #         res_list.append(ExpressionList({1: 1 / dx, 0: -1 / dx}))
+    #     elif methods[n+1] == "bac":
+    #         res_list.append(ExpressionList({0: 1 / dx, -1: -1 / dx}))
+    #     elif methods[n+1] == "center":
+    #         for i in range(n+1):
+    #             fn_idx = postvisitor(
+    #                 idx_expr,
+    #                 evaluate,
+    #                 symbol_map={"i": i, "n": Symbol("n"), "dx": Symbol("dx")},
+    #             )
+    #             fn_cte = postvisitor(
+    #                 cte_expr,
+    #                 evaluate,
+    #                 symbol_map={"i": i, "n": Symbol("n"), "dx": Symbol("dx")},
+    #             )
+    #             fn_list.append((fn_idx, fn_cte))
+    #     else:
+    #         raise NotImplementedError(
+    #             f"Method {methods[0]} not implemented for first derivatives"
+    #         )
+    # fn_list = {k: v for (k, v) in fn_list}
+    # res_list.append(fn_list)
+    # new = {
+    # k: postvisitor(u2.get(k), evaluate, symbol_map={"dx": 0.1}) for k in u2.keys()
+    # }

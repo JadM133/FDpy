@@ -26,4 +26,6 @@ class Fd_problem:
 
         return ", \n".join([eq_str, bc_str, ic_str, method_str]) + "."
 
-    # def forward_in_time(self, dx=0.01, dt=0.01):
+    def forward_in_time(self, dx=0.01, dt=0.01):
+        matrix_values = utils._equ_to_exprlist(self.equation, ("for", "bac"))
+        return matrix_values
