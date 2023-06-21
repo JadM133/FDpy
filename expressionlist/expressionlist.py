@@ -40,13 +40,17 @@ class ExpressionList:
         else:
             raise NotImplementedError
 
-    def __call__(self, dx):
+    def __call__(self, val, symb):
+        name = str(symb)
         expr = self.expr_list
         expr = {
-            k: postvisitor(expr.get(k), evaluate, symbol_map={"dx": dx})
+            k: postvisitor(expr.get(k), evaluate, symbol_map={name: val})
             for k in expr.keys()
         }
         return expr
+
+    def __eq__(self, other):
+        return self.expr_list == other.expr_list
 
     def inc(self, increment=1):
         return ExpressionList(

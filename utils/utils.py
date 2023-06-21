@@ -90,36 +90,3 @@ def _equ_to_exprlist(equation, methods=["for", "for"]):
             sum_n += res_list[idx]
     sum_n = sum_n(dx=0.1)
     print(sum_n)
-    # n = Symbol("n")
-    # i = Symbol("i")
-    # dx = Symbol("dx")
-    # cte_expr = (-1) ** (n - i) * (F(n) / (F(i) * F(n - i)))
-    # idx_expr = n / 2 - i
-    # for n in range(len(equation) - 2):
-    #     fn_list = []
-    #     if methods[n+1] == "for":
-    #         res_list.append(ExpressionList({1: 1 / dx, 0: -1 / dx}))
-    #     elif methods[n+1] == "bac":
-    #         res_list.append(ExpressionList({0: 1 / dx, -1: -1 / dx}))
-    #     elif methods[n+1] == "center":
-    #         for i in range(n+1):
-    #             fn_idx = postvisitor(
-    #                 idx_expr,
-    #                 evaluate,
-    #                 symbol_map={"i": i, "n": Symbol("n"), "dx": Symbol("dx")},
-    #             )
-    #             fn_cte = postvisitor(
-    #                 cte_expr,
-    #                 evaluate,
-    #                 symbol_map={"i": i, "n": Symbol("n"), "dx": Symbol("dx")},
-    #             )
-    #             fn_list.append((fn_idx, fn_cte))
-    #     else:
-    #         raise NotImplementedError(
-    #             f"Method {methods[0]} not implemented for first derivatives"
-    #         )
-    # fn_list = {k: v for (k, v) in fn_list}
-    # res_list.append(fn_list)
-    # new = {
-    # k: postvisitor(u2.get(k), evaluate, symbol_map={"dx": 0.1}) for k in u2.keys()
-    # }
