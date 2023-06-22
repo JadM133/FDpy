@@ -1,4 +1,4 @@
-from expressions import expressions, Expressions, Number
+from FDpy.expressions import expressions, Expressions, Number
 from functools import singledispatch
 
 

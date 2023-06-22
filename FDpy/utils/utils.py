@@ -1,5 +1,5 @@
-from expressions import Symbol
-from expressionlist import ExpressionList
+from FDpy.expressions import Symbol
+from FDpy.expressionlist import ExpressionList
 import numpy as np
 
 

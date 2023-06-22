@@ -1,8 +1,8 @@
-from utils import utils
+from FDpy.utils import utils
 import numpy as np
 from scipy.sparse import diags
 from scipy.linalg import solve
-from plotting import animate_func
+from FDpy.plotting import animate_func
 
 
 class Fd_problem:

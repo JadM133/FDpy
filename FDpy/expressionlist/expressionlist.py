@@ -1,5 +1,5 @@
-from treenode import postvisitor, evaluate
-from expressions import Symbol
+from FDpy.treenode import postvisitor, evaluate
+from FDpy.expressions import Symbol
 
 
 class ExpressionList:
