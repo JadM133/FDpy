@@ -112,9 +112,7 @@ def test_expr_eval():
 def test_evaluation(test_expr_eval, idx):
     expr, x, y, result = test_expr_eval[idx]
     computed_res = postvisitor(expr, evaluate, symbol_map={"x": x, "y": y})
-    assert (
-        computed_res == result
-    ), f"expected an evaluation of {result} for expression {expr}, got {computed_res}"
+    assert computed_res == result, f"expected an evaluation of {result} for expression {expr}, got {computed_res}"
 
 
 @pytest.fixture
@@ -141,9 +139,7 @@ def test_expr_print():
 def test_display(test_expr_print, idx):
     expr, result = test_expr_print[idx]
     print(str(expr))
-    assert (
-        str(expr) == result
-    ), f"expected an evaluation of {result} for expression {expr}"
+    assert str(expr) == result, f"expected an evaluation of {result} for expression {expr}"
 
 
 @pytest.fixture
@@ -152,9 +148,7 @@ def test_expr_simp():
     y = Symbol("y")
     two = Number(2)
     four = Number(4)
-    test_vals = [
-        ((2+x)/y**x, 5, Symbol('y'), "7 / y ^ 5")
-    ]
+    test_vals = [((2 + x) / y**x, 5, Symbol("y"), "7 / y ^ 5")]
     return test_vals
 
 
@@ -163,6 +157,4 @@ def test_simp(test_expr_simp, idx):
     expr, x, y, result = test_expr_simp[idx]
     pred = postvisitor(expr, evaluate, symbol_map={"x": x, "y": y})
     print(type(pred))
-    assert (
-        str(pred) == result
-    ), f"expected an evaluation of {result} for expression {expr}, got {pred}"
+    assert str(pred) == result, f"expected an evaluation of {result} for expression {expr}, got {pred}"

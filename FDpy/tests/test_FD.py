@@ -44,8 +44,7 @@ from expressionlist import ExpressionList
 )
 def test_str(domain, interval, boundary, initial, method, equation, str_val):
     assert (
-        str(Fd_problem(domain, interval, boundary, initial, method, equation))
-        == str_val
+        str(Fd_problem(domain, interval, boundary, initial, method, equation)) == str_val
     ), "Incorrect return value from __str__"
 
 
@@ -133,6 +132,4 @@ def test_equ_to_exprlist(eq, method1, methodn, dx, dt, resultx, resultt):
     act_x, act_t = act_result
     true_x = ExpressionList(resultx)
     true_t = ExpressionList(resultt)
-    assert (act_x == true_x) and (
-        act_t == true_t
-    ), f"expected {true_x, true_t} but got {act_result}"
+    assert (act_x == true_x) and (act_t == true_t), f"expected {true_x, true_t} but got {act_result}"

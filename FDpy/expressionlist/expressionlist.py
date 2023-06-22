@@ -15,10 +15,7 @@ class ExpressionList:
     def __add__(self, other):
         d1 = self.expr_list
         d2 = other.expr_list
-        d_added = {
-            k_val: d1.get(k_val, 0) + d2.get(k_val, 0)
-            for k_val in (d1.keys() | d2.keys())
-        }
+        d_added = {k_val: d1.get(k_val, 0) + d2.get(k_val, 0) for k_val in (d1.keys() | d2.keys())}
         return ExpressionList(d_added)
 
     def __mul__(self, other):
@@ -32,10 +29,7 @@ class ExpressionList:
     def __sub__(self, other):
         d1 = self.expr_list
         d2 = other.expr_list
-        d_sub = {
-            k_val: d1.get(k_val, 0) - d2.get(k_val, 0)
-            for k_val in (d1.keys() | d2.keys())
-        }
+        d_sub = {k_val: d1.get(k_val, 0) - d2.get(k_val, 0) for k_val in (d1.keys() | d2.keys())}
         return ExpressionList(d_sub)
 
     def __truediv__(self, other):
@@ -49,12 +43,7 @@ class ExpressionList:
     def __call__(self, val, symb):
         name = str(symb)
         expr = self.expr_list
-        expr = ExpressionList(
-            {
-                k: postvisitor(expr.get(k), evaluate, symbol_map={name: val})
-                for k in expr.keys()
-            }
-        )
+        expr = ExpressionList({k: postvisitor(expr.get(k), evaluate, symbol_map={name: val}) for k in expr.keys()})
         expr.clean()
         return expr
 
@@ -62,9 +51,7 @@ class ExpressionList:
         return self.expr_list == other.expr_list
 
     def inc(self, increment=1):
-        return ExpressionList(
-            {k + increment: elem for k, elem in self.expr_list.items()}
-        )
+        return ExpressionList({k + increment: elem for k, elem in self.expr_list.items()})
 
     def dec(self, increment=1):
         return self.inc(-increment)

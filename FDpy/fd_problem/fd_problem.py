@@ -4,6 +4,7 @@ from scipy.sparse import diags
 from scipy.linalg import solve
 from plotting import animate_func
 
+
 class Fd_problem:
     def __init__(
         self,
@@ -78,9 +79,7 @@ class Fd_problem:
         return rhs
 
     def forward_in_time(self):
-        mat_entries = utils._equ_to_exprlist(
-            self.equation, self.method[0], self.method[1], self.dx, self.dt
-        )
+        mat_entries = utils._equ_to_exprlist(self.equation, self.method[0], self.method[1], self.dx, self.dt)
         mat, rhs_x, rhs_t, bc_x = utils._exprlist_to_mat(mat_entries, self.time)
         Nx = self.create_mesh()
         matrix = diags(mat[1], mat[0].astype(int), shape=(Nx, Nx)).toarray()

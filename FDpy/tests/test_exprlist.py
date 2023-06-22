@@ -3,7 +3,7 @@ from expressionlist import ExpressionList
 from expressions import Symbol
 from functools import singledispatch
 
-x = Symbol('x')
+x = Symbol("x")
 
 
 @pytest.mark.parametrize(
@@ -35,7 +35,7 @@ def test_sub(d1, d2, sub_val):
 @pytest.mark.parametrize(
     "d1, d2, div_val",
     [
-        ({0: 5, -1: 6, 1: 4}, x, {0: 5/x, -1: 6/x, 1: 4/x}),
+        ({0: 5, -1: 6, 1: 4}, x, {0: 5 / x, -1: 6 / x, 1: 4 / x}),
         ({0: 5, -1: 6, 1: 4}, 2, None),
         ({0: 5, -1: 6, 1: 4}, {0: 3, 1: 4}, None),
     ],
@@ -45,7 +45,7 @@ def test_div(d1, d2, div_val):
     def testing(d1, d2, div_val):
         d1 = ExpressionList(d1)
         with pytest.raises(NotImplementedError):
-            d1/d2
+            d1 / d2
 
     @testing.register(Symbol)
     def test_div(d1, d2, div_val):
@@ -57,7 +57,7 @@ def test_div(d1, d2, div_val):
 @pytest.mark.parametrize(
     "d1, x_val, call_val",
     [
-        ({0: 1/x, -1: 5*x, 1: x+2}, 0.1, {0: 10, -1: 0.5, 1: 2.1}),
+        ({0: 1 / x, -1: 5 * x, 1: x + 2}, 0.1, {0: 10, -1: 0.5, 1: 2.1}),
     ],
 )
 def test_call(d1, x_val, call_val):

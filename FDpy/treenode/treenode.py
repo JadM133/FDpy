@@ -18,15 +18,12 @@ class TreeNode:
 def postvisitor(expr, fn, **kwargs):
     if not isinstance(expr, Expressions):
         expr = Number(expr)
-    return fn(expr,
-              *(postvisitor(c, fn, **kwargs) for c in expr.operands),
-              **kwargs)
+    return fn(expr, *(postvisitor(c, fn, **kwargs) for c in expr.operands), **kwargs)
 
 
 @singledispatch
 def evaluate(expr, *o, **kwargs):
-    raise NotImplementedError(
-        f"Cannot evaluate a {type(expr).__name__}")
+    raise NotImplementedError(f"Cannot evaluate a {type(expr).__name__}")
 
 
 @evaluate.register(expressions.Number)
@@ -68,5 +65,5 @@ def _(expr, *o, **kwargs):
 def _(expr, *o, **kwargs):
     fac = 1
     for num in range(o[0]):
-        fac *= num+1
+        fac *= num + 1
     return fac

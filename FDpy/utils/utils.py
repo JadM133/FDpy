@@ -8,8 +8,7 @@ def _compute_str_eq(coeffs, index):
     terms = []
     label = "x" if index == 0 else "t"
     terms += [
-        None if coef == 0 else "{:+}".format(coef) + "U" + label * (idx + 1)
-        for idx, coef in enumerate(coeffs[2:])
+        None if coef == 0 else "{:+}".format(coef) + "U" + label * (idx + 1) for idx, coef in enumerate(coeffs[2:])
     ]
     terms = "0" if terms == [] else terms
     terms = list(filter(lambda item: item is not None, terms))
@@ -21,10 +20,7 @@ def _compute_str_cond(domain, boundary, idx):
     bc_str = []
     try:
         length = len(boundary)
-        bc_str += [
-            "U = " + str(boundary[i]) + " at " + idx + " = " + str(domain[i])
-            for i in range(length)
-        ]
+        bc_str += ["U = " + str(boundary[i]) + " at " + idx + " = " + str(domain[i]) for i in range(length)]
         bc_str = ", ".join(bc_str)
     except TypeError:
         length = 1
@@ -60,9 +56,7 @@ def _x_or_t_to_epxrlist(equation, methods, step_size):
     elif methods[0] == "cen":
         res_list.append(ux_cen * equation[2])
     else:
-        raise NotImplementedError(
-            f"Method {methods[0]} not implemented for first derivatives"
-        )
+        raise NotImplementedError(f"Method {methods[0]} not implemented for first derivatives")
 
     u_n_minus_1_for = ux_for
     u_n_minus_1_bac = ux_back
@@ -93,12 +87,7 @@ def _x_or_t_to_epxrlist(equation, methods, step_size):
     return sum_n
 
 
-def _equ_to_exprlist(
-    equation, method_x=["for", "for"],
-    method_y=["for", "for"],
-    dx_val=0.1,
-    dt_val=0.1
-):
+def _equ_to_exprlist(equation, method_x=["for", "for"], method_y=["for", "for"], dx_val=0.1, dt_val=0.1):
     mat_x = _x_or_t_to_epxrlist(equation[0], method_x, dx_val)
     mat_y = _x_or_t_to_epxrlist(equation[1], method_y, dt_val)
     return mat_x, mat_y

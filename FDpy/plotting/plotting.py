@@ -24,8 +24,8 @@ def animate_func(domain, dx, u_mat, boundary):
         partial(animate, domain=domain, dx=dx, boundary=boundary, u_mat=u_mat, ax=ax),
         interval=10,
     )
-    #print(__name__)
+    # print(__name__)
     # print(__main__)
-    #writergif = animation.PillowWriter()
-    #anim.save(ROOT_DIRECTORY / "file.gif", writer=writergif)
+    # writergif = animation.PillowWriter()
+    # anim.save(ROOT_DIRECTORY / "file.gif", writer=writergif)
     plt.show()
