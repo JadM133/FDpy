@@ -2,7 +2,7 @@ from FDpy.utils import utils
 import numpy as np
 from scipy.sparse import diags
 from scipy.linalg import solve
-from FDpy.plotting import animate_func
+from FDpy.plotting import start_animation
 
 
 class Fd_problem:
@@ -21,12 +21,14 @@ class Fd_problem:
         self.domain = domain
         self.equation = equation
         self.interval = interval
-        self.boundary = boundary
-        self.initial = initial
-        self.method = method
-        self.time = time
         self.dx = dx
         self.dt = dt
+        self.Nx = self.create_mesh()
+        self.boundary = [elem if isinstance(elem, tuple) else range(elem, elem + 1) for elem in boundary]
+        self.initial = [np.ones(self.Nx)*elem if isinstance(elem, (int, float)) else elem for elem in initial]
+        self.method = method
+        self.time = time
+        
 
     def __str__(self):
         constant = utils._sum_sides(self.equation, 0)
@@ -51,16 +53,16 @@ class Fd_problem:
         self.dx = (xf - x0) / (Nx + 1)
         return Nx
 
-    def create_rhs(self, rhs_x, rhs_t, Nx):
-        rhs_val = np.zeros(Nx)
+    def create_rhs(self, rhs_x, rhs_t):
+        rhs_val = np.zeros(self.Nx)
         node_vals_t = rhs_t[1]
         for count, _ in enumerate(rhs_t[0]):
-            rhs_val += np.ones(Nx) * self.initial[count] * node_vals_t[count]
+            rhs_val += self.initial[count] * node_vals_t[count]
         if rhs_x is not None:  # for explicit, not implemented yet
             pass
         return rhs_val
 
-    def implement_bc(self, rhs, bc_x):
+    def implement_bc(self, matrix, rhs, bc_x, first):
         node_vals_x = bc_x[1]
         for count, val in enumerate(bc_x[0]):
             val = int(val)
@@ -75,20 +77,29 @@ class Fd_problem:
                 finish = val
                 swap = -1
             for idx in range(start, finish + 1):
-                rhs[swap * idx] += node_vals_x[count] * self.boundary[count]
+                rhs[swap * idx] += node_vals_x[count] * self.boundary[count][0]
+                if first:
+                    for idx2 in range(len(self.boundary[count]) - 1):
+                        new_idx = -(idx2+1) if swap == -1 else idx2
+                        matrix[swap * idx, new_idx] += -node_vals_x[count] * self.boundary[count][idx2 + 1]
         return rhs
 
     def forward_in_time(self):
         mat_entries = utils._equ_to_exprlist(self.equation, self.method[0], self.method[1], self.dx, self.dt)
         mat, rhs_x, rhs_t, bc_x = utils._exprlist_to_mat(mat_entries, self.time)
-        Nx = self.create_mesh()
-        matrix = diags(mat[1], mat[0].astype(int), shape=(Nx, Nx)).toarray()
+        matrix = diags(mat[1], mat[0].astype(int), shape=(self.Nx, self.Nx)).toarray()
         mat_u = []
+        first = True
         for t in np.arange(self.interval[0], self.interval[1], self.dt):
-            rhs = self.create_rhs(rhs_x, rhs_t, Nx)
-            rhs = self.implement_bc(rhs, bc_x)
+            rhs = self.create_rhs(rhs_x, rhs_t)
+            rhs = self.implement_bc(matrix, rhs, bc_x, first)
+            first = False
             u = solve(matrix, rhs)
-            self.initial = u
+            print(matrix)
+            print(rhs)
+            print(u)
+            self.initial[0] = u
             mat_u.append(u)
-        animate_func(self.domain, self.dx, mat_u, self.boundary)
+        start_animation(self.domain, self.dx, mat_u, self.boundary)
+        # totalfunc()
         return u

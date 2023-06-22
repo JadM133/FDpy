@@ -1,1 +1,1 @@
-from .plotting import animate_func
+from .plotting import start_animation
