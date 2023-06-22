@@ -106,7 +106,10 @@ def _equ_to_exprlist(
 
 def _exprlist_to_mat(mat_entries, time="imp"):
     x_entries, t_entries = mat_entries
-    mat_dict, rhs_dict = x_entries.combine_x_and_t(t_entries, time)
-    mat_array = np.array(mat_dict.items())
-    rhs_array = np.array(rhs_dict.items())
-    return mat_array, rhs_array
+    mat_dict, rhs_x, rhs_t, bc_x = x_entries.combine_x_and_t(t_entries, time)
+    mat_array = np.transpose(np.array(list(mat_dict.items())))
+    rhs_t = np.transpose(np.sort(np.array(list(rhs_t.items())), axis=0))
+    if rhs_x is not None:
+        rhs_x = np.transpose(np.sort(np.array(list(rhs_x.items())), axis=0))
+    bc_x = np.transpose(np.sort(np.array(list(bc_x.items())), axis=0))
+    return mat_array, rhs_x, rhs_t, bc_x

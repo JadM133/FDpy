@@ -74,16 +74,22 @@ class ExpressionList:
 
     def combine_x_and_t(self, other, time):
         t_dict = other.expr_list
-        k_max = max(k for k, v in t_dict.items())
+        k_max = max(k for k in t_dict.keys())
         if time == "imp":
-            t_max = ExpressionList({k_max: t_dict.get(k_max)})
+            t_max = ExpressionList({0: t_dict.get(k_max)})
+            del t_dict[k_max]
+            rhs_t = {k: -v for k, v in t_dict.items()}
             mat_dict = (t_max - self).expr_list
-            del t_dict[k_max]
-            rhs_dict = -t_dict
-            return mat_dict, rhs_dict
+            rhs_x = None
+            bc_x = self.expr_list
+            del bc_x[0]
+            return mat_dict, rhs_x, rhs_t, bc_x
         elif time == "exp":
-            mat_dict = {k_max: t_dict.get(k_max)}
+            mat_dict = {0: t_dict.get(k_max)}
             del t_dict[k_max]
-            rhs_dict = (self - ExpressionList(t_dict)).expr_list
+            rhs_t = {k: -v for k, v in t_dict.items()}
+            rhs_x = self.expr_list
+            del rhs_x[0]
+            return mat_dict, rhs_x, rhs_t
         else:
             raise NotImplementedError
