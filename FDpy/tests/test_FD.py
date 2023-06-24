@@ -1,7 +1,7 @@
-from fd_problem import Fd_problem
+from FDpy.fd_problem import Fd_problem
 import pytest
-from utils import _equ_to_exprlist
-from expressionlist import ExpressionList
+from FDpy.utils import _equ_to_exprlist
+from FDpy.expressionlist import ExpressionList
 
 
 @pytest.mark.parametrize(
@@ -133,3 +133,8 @@ def test_equ_to_exprlist(eq, method1, methodn, dx, dt, resultx, resultt):
     true_x = ExpressionList(resultx)
     true_t = ExpressionList(resultt)
     assert (act_x == true_x) and (act_t == true_t), f"expected {true_x, true_t} but got {act_result}"
+
+
+eq = ((0, 0, 0, 0, 0, 1), (0, 0, 1))
+method = ["for", "cen"]
+print(_equ_to_exprlist(eq, method, dx_val=1))

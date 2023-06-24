@@ -9,6 +9,6 @@ time = "imp"
 equation = ((0, 0, 0, 1), (0, 0, 1))
 dx = 0.1
 dt = 0.1
-A = Fd_problem((0, 10), (0, 1), ((0, 1), (0), (1, 2), equation, dx, dt, time, methods)
+A = Fd_problem((0, 10), (0, 1), (0, 1), (0), (1, 2), equation, dx, dt, time, methods)
 print(A)
 u = A.forward_in_time()

@@ -25,10 +25,9 @@ class Fd_problem:
         self.dt = dt
         self.Nx = self.create_mesh()
         self.boundary = [elem if isinstance(elem, tuple) else range(elem, elem + 1) for elem in boundary]
-        self.initial = [np.ones(self.Nx)*elem if isinstance(elem, (int, float)) else elem for elem in initial]
+        self.initial = [np.ones(self.Nx) * elem if isinstance(elem, (int, float)) else elem for elem in initial]
         self.method = method
         self.time = time
-        
 
     def __str__(self):
         constant = utils._sum_sides(self.equation, 0)
@@ -80,7 +79,7 @@ class Fd_problem:
                 rhs[swap * idx] += node_vals_x[count] * self.boundary[count][0]
                 if first:
                     for idx2 in range(len(self.boundary[count]) - 1):
-                        new_idx = -(idx2+1) if swap == -1 else idx2
+                        new_idx = -(idx2 + 1) if swap == -1 else idx2
                         matrix[swap * idx, new_idx] += -node_vals_x[count] * self.boundary[count][idx2 + 1]
         return rhs
 

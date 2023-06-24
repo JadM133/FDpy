@@ -4,6 +4,7 @@ from functools import partial
 import numpy as np
 import pathlib
 
+
 def totalfunc():
     ROOT_DIRECTORY = pathlib.Path(__file__).resolve().parent.parent.parent / "figures"
 
@@ -16,11 +17,10 @@ def totalfunc():
     v02 = 5
     z2 = g * t**2 / 2 + v02 * t
 
-    scat = ax.scatter(t[0], z[0], c="b", s=5, label=f'v0 = {v0} m/s')
-    line2 = ax.plot(t[0], z2[0], label=f'v0 = {v02} m/s')[0]
-    ax.set(xlim=[0, 3], ylim=[-4, 10], xlabel='Time [s]', ylabel='Z [m]')
+    scat = ax.scatter(t[0], z[0], c="b", s=5, label=f"v0 = {v0} m/s")
+    line2 = ax.plot(t[0], z2[0], label=f"v0 = {v02} m/s")[0]
+    ax.set(xlim=[0, 3], ylim=[-4, 10], xlabel="Time [s]", ylabel="Z [m]")
     ax.legend()
-
 
     def update(frame):
         # for each frame, update the data stored on each artist.
@@ -33,7 +33,6 @@ def totalfunc():
         line2.set_xdata(t[:frame])
         line2.set_ydata(z2[:frame])
         return (scat, line2)
-
 
     ani = animation.FuncAnimation(fig=fig, func=update, frames=40, interval=30)
     plt.show()

@@ -14,16 +14,16 @@ def start_animation(domain, dx, u_mat, boundary):
     def animate(i, domain, dx, boundary, u_mat, ax, line2):
         x0 = domain[0]
         xf = domain[1]
-        x_vec = np.arange(x0, xf+dx, dx)
+        x_vec = np.arange(x0, xf + dx, dx)
         u_vec = u_mat[i]
         begin = boundary[0]
         at_0 = begin[0]
-        for idx in range(len(begin)-1):
-            at_0 += begin[idx + 1]*u_vec[idx + 1]
+        for idx in range(len(begin) - 1):
+            at_0 += begin[idx + 1] * u_vec[idx + 1]
         ending = boundary[1]
         at_M = ending[0]
-        for idx in range(len(ending)-1):
-            at_M += ending[idx + 1]*u_vec[-(idx + 1)]
+        for idx in range(len(ending) - 1):
+            at_M += ending[idx + 1] * u_vec[-(idx + 1)]
         u_vec = np.insert(u_vec, 0, at_0)
         u_vec = np.insert(u_vec, len(u_vec), at_M)
         line2.set_xdata(x_vec)
@@ -32,7 +32,7 @@ def start_animation(domain, dx, u_mat, boundary):
 
     fig, ax = plt.subplots()
     line2 = ax.plot(0.0, 0.0, label="u")[0]
-    ax.set(xlim=[domain[0], domain[1]+dx], ylim=[0, 1.1], xlabel="X", ylabel="U")
+    ax.set(xlim=[domain[0], domain[1] + dx], ylim=[0, 1.1], xlabel="X", ylabel="U")
     ax.legend()
 
     anim = animation.FuncAnimation(

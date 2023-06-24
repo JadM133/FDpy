@@ -40,6 +40,42 @@ def _sum_sides(equation, idx):
 
 
 def _x_or_t_to_epxrlist(equation, methods, step_size):
+    """
+    Convert one part of an Fd_problem equation to an ExpressionList.
+
+    Parameters
+    ----------
+    equation part : (0, ..., 1, 3) array_like
+        Equation part to be converted.
+
+    methods : ["method1", "method2"] list_like
+        Specifies the method for computing derivatives: "for" 
+        for forward, "bac" for backward, and "cen" for center.
+        The first entry is for the first derivative, the 
+        second entry is for all higher derivatives.
+
+    step_size : float
+        Specifies the step size in etiher x or t.
+
+    Returns
+    -------
+    sum_n : ExpressionList instance
+        Returns an ExpressionList instance with info about how to fill 
+        matrix/rhs for all n derivatives>
+
+    Examples
+    --------
+    Equation part uxx, given as (0, 0, 0, 1):
+    >>> equation = (0, 0, 0, 1)
+    >>> utils._x_or_t_to_epxrlist(equation, ["for", "cen"], 0.1)
+    ExpressionList{0: -200.0, 1: 100.0, -1: 100.0}
+    Where the keys specify the position wrt the diagonal of a matrix 
+    (i.e. 0 for diagonal, 1 for line above diagonal, -1 for line below, ...)
+    and the values specify what should be added to the matrix (e.g. -2/dx**2,
+    and 1/dx**2 for center approximation in x in this case).
+    Note: the first entry of methods is not used in this case since there is
+    no first derivatives in the equation specified.
+    """
     res_list = []
 
     res_list.append(ExpressionList({0: equation[1]}))
@@ -87,10 +123,57 @@ def _x_or_t_to_epxrlist(equation, methods, step_size):
     return sum_n
 
 
-def _equ_to_exprlist(equation, method_x=["for", "for"], method_y=["for", "for"], dx_val=0.1, dt_val=0.1):
+def _equ_to_exprlist(equation, method_x=["for", "for"], method_t=["for", "for"], dx_val=0.1, dt_val=0.1):
+    """
+    Convert an Fd_problem equation to an ExpressionList.
+
+    Parameters
+    ----------
+    equation : ((0, ..., 1, 3), (2, ..., 0)) array_like
+        Equation to be converted.
+
+    method_x : ["method1", "method2"] list_like
+        Specifies the method for computing derivatives in x,"for" 
+        for forward, "bac" for backward, and "cen" for center.
+        The first entry is for the first derivative, the 
+        second entry is for all higher derivatives.
+
+    method_t : ["method1", "method2"] list_like
+        Specifies the method for computing derivatives in t,"for" 
+        for forward, "bac" for backward, and "cen" for center.
+        THhe first entry is for the first derivative, the 
+        second entry is for all higher derivatives.
+
+    dx_val : float
+        Specifies the mesh size in x.
+
+    dt_val : float
+        Specifies the step size in t.
+
+    Returns
+    -------
+    mat_x : np array
+        Returns an ExpressionList instance with info about how to fill 
+        matrix/rhs for the x-part of the equation.
+
+    mat_t : np array
+        Returns an ExpressionList instance with info about how to fill 
+        matrix/rhs for the x-part of the equation.
+
+    Examples
+    --------
+    Equation ux = ut, given as ((0, 0, 1), (0, 0, 1)):
+    >>> equation = ((0, 0, 1), (0, 0, 1))
+    >>> utils._equ_to_exprlist(equation, ["cen"], ["for"], 0.1, 0.1)
+    (ExpressionList{1: 5.0, -1: -5.0}, ExpressionList{0: -10.0, 1: 10.0})
+    Where the keys specify the position wrt the diagonal of a matrix 
+    (i.e. 0 for diagonal, 1 for line above diagonal, -1 for line below, ...)
+    and the values specify what should be added to the matrix (e.g. 1/2dx,
+    and -1/2dx for center approximation in x in this case).
+    """
     mat_x = _x_or_t_to_epxrlist(equation[0], method_x, dx_val)
-    mat_y = _x_or_t_to_epxrlist(equation[1], method_y, dt_val)
-    return mat_x, mat_y
+    mat_t = _x_or_t_to_epxrlist(equation[1], method_t, dt_val)
+    return mat_x, mat_t
 
 
 def _exprlist_to_mat(mat_entries, time="imp"):
@@ -102,3 +185,6 @@ def _exprlist_to_mat(mat_entries, time="imp"):
         rhs_x = np.transpose(np.sort(np.array(list(rhs_x.items())), axis=0))
     bc_x = np.transpose(np.sort(np.array(list(bc_x.items())), axis=0))
     return mat_array, rhs_x, rhs_t, bc_x
+
+
+res = _x_or_t_to_epxrlist((1, 2, 1, 1), ["bac", "cen"], 0.1)
