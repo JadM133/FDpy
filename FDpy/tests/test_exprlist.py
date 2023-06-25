@@ -1,6 +1,10 @@
+
+"""Deifine tests for ExpressionList class."""
+
+
 import pytest
-from expressionlist import ExpressionList
-from expressions import Symbol
+from FDpy.expressionlist import ExpressionList
+from FDpy.expressions import Symbol
 from functools import singledispatch
 
 x = Symbol("x")
@@ -13,6 +17,7 @@ x = Symbol("x")
     ],
 )
 def test_add(d1, d2, sum_val):
+    """Test addition between ExpressionLists."""
     d1 = ExpressionList(d1)
     d2 = ExpressionList(d2)
     sum_val = ExpressionList(sum_val)
@@ -26,6 +31,7 @@ def test_add(d1, d2, sum_val):
     ],
 )
 def test_sub(d1, d2, sub_val):
+    """Test substraction between ExpressionLists."""
     d1 = ExpressionList(d1)
     d2 = ExpressionList(d2)
     sub_val = ExpressionList(sub_val)
@@ -41,6 +47,7 @@ def test_sub(d1, d2, sub_val):
     ],
 )
 def test_div(d1, d2, div_val):
+    """Test substraction between ExpressionLists."""
     @singledispatch
     def testing(d1, d2, div_val):
         d1 = ExpressionList(d1)
@@ -61,31 +68,31 @@ def test_div(d1, d2, div_val):
     ],
 )
 def test_call(d1, x_val, call_val):
+    """Test evaluation of ExpressionLists."""
     d1 = ExpressionList(d1)
-    val = d1(x_val, x)
+    val = d1(x_val, "x")
     call_val = ExpressionList(call_val)
     assert val == call_val, f"expected {call_val} but got {val}"
 
 
 @pytest.mark.parametrize(
-    "d1, res_val",
+    "x_dict, t_dict, mat, rhs_x, rhs_t, bc_x",
     [
-        ({0: 1.1, -1: 5, 1: -2}, {1: 1.1, 0: 5, 2: -2}),
+        ({0: 1, -1: 2, 1: 3}, {0: 4, 1: 5}, {-1: -2, 0: 4, 1: -3}, None, {0: -4}, {-1: 2, 1: 3}),
+        ({0: -2, 1: 1, -1: 1}, {0: -2, 1: 2}, {0: 4, 1: -1, -1: -1}, None, {0: 2}, {1: 1, -1: 1})
     ],
 )
-def test_inc(d1, res_val):
-    d1 = ExpressionList(d1)
-    res_val = ExpressionList(res_val)
-    assert d1.inc() == res_val, f"expected {res_val} but got {d1.inc()}"
+def test_combine_x_and_t(x_dict, t_dict, mat, rhs_x, rhs_t, bc_x):
+    """Test the method when implicit sschemes are used."""
+    x = ExpressionList(x_dict)
+    t = ExpressionList(t_dict)
+    m, r1, r2, b = x.combine_x_and_t(t, "imp")
+    assert m == mat, f"Wrong matrix, expected{mat} but got {m}"
+    assert r1 == rhs_x, f"Wrong rhs (x), expected{rhs_x} but got {r1}"
+    assert r2 == rhs_t, f"Wrong rhs (t), expected{rhs_t} but got {r2}"
+    assert b == bc_x, f"Wrong bc (x), expected{bc_x} but got {b}"
 
 
-@pytest.mark.parametrize(
-    "d1, res_val",
-    [
-        ({0: 1.1, -1: 5, 1: -2}, {-1: 1.1, -2: 5, 0: -2}),
-    ],
-)
-def test_dec(d1, res_val):
-    d1 = ExpressionList(d1)
-    res_val = ExpressionList(res_val)
-    assert d1.dec() == res_val, f"expected {res_val} but got {d1.dec()}"
+x = ExpressionList({0: 1, -1: 2, 1: 3})
+t = ExpressionList({0: 4, 1: 5})
+a = x.combine_x_and_t(t, "imp")
