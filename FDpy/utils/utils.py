@@ -224,6 +224,15 @@ def _equ_to_expr(equation, method_x=["cen"], method_t=["for"], dx_val=0.1, dt_va
 
 
 def _exprlist_to_mat(mat_entries, time="imp"):
+    """Transform two dicts into arrays to fill the matrix/rhs later.
+
+    In this function, we only take care of having the right type. The
+    bulk of the transformation happening is in combine_x_and_t.
+
+    See Also
+    --------
+    class ExpressionList : Detailed explanation/examples of combine_x_and_t.
+    """
     x_entries, t_entries = mat_entries
     mat_dict, rhs_x, rhs_t, bc_x = x_entries.combine_x_and_t(t_entries, time)
     mat_array = np.transpose(np.array(list(mat_dict.items())))

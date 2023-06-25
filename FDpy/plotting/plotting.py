@@ -32,7 +32,12 @@ def start_animation(domain, dx, u_mat, boundary):
 
     fig, ax = plt.subplots()
     line2 = ax.plot(0.0, 0.0, label="u")[0]
-    ax.set(xlim=[domain[0], domain[1] + dx], ylim=[0, 1.1], xlabel="X", ylabel="U")
+    ax.set(
+        xlim=[domain[0], domain[1] + dx],
+        ylim=[np.min(u_mat)-2, np.max(u_mat)+2],
+        xlabel="X",
+        ylabel="U",
+    )
     ax.legend()
 
     anim = animation.FuncAnimation(
