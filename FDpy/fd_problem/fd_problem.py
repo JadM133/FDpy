@@ -55,6 +55,7 @@ class Fd_problem:
         dt=0.1,
         method_fd="imp",
         method=["cen", "for"],
+        bc_map=None,
     ):
         self.domain = domain
         self.equation = equation
@@ -65,7 +66,7 @@ class Fd_problem:
             raise ValueError(f"Increments can not be negative, specified dx = {self.dx} and dt = {self.dt}")
         self.Nx = self._create_mesh()
         if isinstance(boundary, (int, float)):
-            self.boundary = [boundary]
+            self.boundary = [range(boundary, boundary + 1)]
         elif boundary is not None:
             self.boundary = [elem if isinstance(elem, tuple) else range(elem, elem + 1) for elem in boundary]
         else:
@@ -91,6 +92,7 @@ class Fd_problem:
             self.initial = None
         self.method = method
         self.method_fd = method_fd
+        self.bc_map = bc_map
         self._check_input()
         self.solution = []
 
@@ -115,11 +117,7 @@ class Fd_problem:
             raise ValueError("Provide domain in increasing order.")
         if len(self.interval) != 2:
             raise ValueError("Interval must be of len 2")
-        if self.boundary is not None and len(self.boundary) != len(self.equation[0]) - 2:
-            raise ValueError(f"Wrong number of boundary conditions, expected {len(self.equation[0])-2}.")
         if self.initial is not None:
-            if len(self.initial) != len(self.equation[1]) - 2:
-                raise ValueError(f"Wrong number of initial conditions, expected {len(self.equation[1])-2}.")
             for elem in self.initial:
                 if not isinstance(elem, np.ndarray) and not isinstance(elem, tuple):
                     raise NotImplementedError("Initial conditions must be of a number or of types: tuple, np.ndarray.")
@@ -163,22 +161,32 @@ class Fd_problem:
         node_vals_x = bc_x[1]
         for count, val in enumerate(bc_x[0]):
             val = int(val)
+            p = sum(bc_x[0] > 0)
+            n = sum(bc_x[0] < 0)
             if val == 0:
                 continue
             elif val < 0:
-                start = 0
-                finish = -val - 1
+                finish = -2
+                start = -val - 1
                 swap = 1
+                chosen = n - 1
             else:
-                start = 1
-                finish = val
+                start = val
+                finish = -1
                 swap = -1
-            for idx in range(start, finish + 1):
-                rhs[swap * idx] += node_vals_x[count] * self.boundary[count][0]
+                chosen = -p
+
+            for idx in range(start, finish + 1, -1):
+                find = np.where(self.bc_map == chosen)[0][0]
+                try:
+                    rhs[swap * idx] += node_vals_x[count] * self.boundary[find][0]
+                except IndexError:
+                    raise ValueError("Wrong BCs were provided, run self.info() for more details.")
+                chosen += -swap
                 if first:
-                    for idx2 in range(len(self.boundary[count]) - 1):
+                    for idx2 in range(len(self.boundary[find]) - 1):
                         new_idx = -(idx2 + 1) if swap == -1 else idx2
-                        matrix[swap * idx, new_idx] += -node_vals_x[count] * self.boundary[count][idx2 + 1]
+                        matrix[swap * idx, new_idx] += -node_vals_x[count] * self.boundary[find][idx2 + 1]
         return rhs, matrix
 
     def _init_rhs(self):
@@ -201,11 +209,31 @@ class Fd_problem:
             res[:, point] = x
         return res
 
-    def forward_in_time(self, verbose=True):
+    def info(self):
+        bc_x, rhs_t = self.forward_in_time(sanity=True)
+        p = int(sum(bc_x[0] > 0))
+        n = int(sum(bc_x[0] < 0))
+        p_vec = np.arange(-p, 0)
+        n_vec = np.arange(0, n)
+        keys_t = rhs_t[0]
+        print(f"BC are needed at the following points from the right: {p_vec}")
+        print(f"And these from the left: {n_vec}")
+        print(f"IC are needed at the following times: {keys_t}")
+        return p_vec, n_vec, keys_t
+
+    def forward_in_time(self, verbose=False, sanity=False):
         mat_entries = utils._equ_to_expr(
             self.equation, self.method[0], self.method[1], self.dx, self.dt, time=self.method_fd, verbose=verbose
         )
         mat, rhs_x, rhs_t, bc_x = utils._exprlist_to_mat(mat_entries, self.method_fd)
+
+        if sanity:
+            return bc_x, rhs_t
+        if len(self.boundary) != len(bc_x[0]):
+            raise ValueError("Wrong number of boundary conditions. Run self.bc_info for more details.")
+        if len(self.initial) != len(rhs_t[0]):
+            raise ValueError("Wrong number of initial conditions. Run self.bc_info for more details.")
+
         matrix = diags(mat[1], mat[0].astype(int), shape=(self.Nx, self.Nx)).toarray()
         mat_u = self.initial  # Matrix that will store results for all time.
         first = True

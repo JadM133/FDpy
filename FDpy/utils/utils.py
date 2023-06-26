@@ -155,6 +155,9 @@ def _x_or_t_to_epxr(equation, method, name, step_size, acc=2, time="imp", order_
     elif method == "for":
         for p in range(1, np.round(2 * accuracy)):
             points.append(p)
+    elif method == "bac":
+        for p in range(-1, -np.round(2 * accuracy), -1):
+            points.append(p)
 
     coeffs = _compute_coefficients(accuracy, order, points)
     coeffs_at_order = []  # Extract only coefficients at required order
@@ -214,7 +217,7 @@ def _equ_to_expr(equation, method_x=["cen"], method_t=["for"], dx_val=0.1, dt_va
     and -1/2dx for center approximation in x in this case).
     """
     expr_t, coeffs_t, order_t = _x_or_t_to_epxr(equation[1], method_t, "dt", dt_val, acc=1, time=time)
-    expr_x, coeffs_x, _ = _x_or_t_to_epxr(equation[0], method_x, "dx", dx_val, time=time, order_t=order_t)
+    expr_x, coeffs_x, _ = _x_or_t_to_epxr(equation[0], method_x, "dx", dx_val, acc=4, time=time, order_t=order_t)
     if verbose:
         print("*******************Approximation*****************")
         print(f"Left hand side: {expr_x}")

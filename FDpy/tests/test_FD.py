@@ -26,7 +26,6 @@ def test_str(boundary, initial, equation, str_val):
     [
         ((0, 0, 1, 2, 3), 5, ((1, -1, 0, 4, 5, 2, 0), (2, 0, -1)), 0.1, 0.1),
         (2, 0, ((2, 3, 10), (2, 3, 1, 0)), -0.1, 0.2),
-        (2, 0, ((2, 3, 10, 5), (2, 3, 1)), 0.1, 0.1),
         (2, 0, ((2, 3, 10), (2, 3, 1)), 0, 0.1),
         (2, 0, ((2, 3, 10), (2, 3, 1)), 0.1, 0),
         (2, 0, ((2, 3, 10), (2, 3, 1)), 0.1, -0.2),
@@ -40,7 +39,7 @@ def test_raise_errors(boundary, initial, equation, dx, dt):
         Fd_problem((0, 1), (0, 10), boundary, initial, equation, dx, dt)
 
 
-x = Symbol('x')
+x = Symbol("x")
 
 
 @pytest.mark.parametrize(
@@ -51,7 +50,7 @@ x = Symbol('x')
         ((4, 6), ((0, 0, 0, 1), (0, 0, 0, 1)), [[4, 4, 4, 4], [6, 6, 6, 6]]),
         ((4, (0, 1)), ((0, 0, 0, 1), (0, 0, 0, 1)), [[4, 4, 4, 4], [4, 4, 4, 4]]),
         ((np.ones(4), (0, 6)), ((0, 0, 0, 1), (0, 0, 0, 1)), [[1, 1, 1, 1], [6, 6, 6, 6]]),
-        ((2*x-1, (0, 2)), ((0, 0, 0, 1), (0, 0, 0, 1)), [[-0.6, -0.2, 0.2, 0.6], [-1.2, -0.4, 0.4, 1.2]]),
+        ((2 * x - 1, (0, 2)), ((0, 0, 0, 1), (0, 0, 0, 1)), [[-0.6, -0.2, 0.2, 0.6], [-1.2, -0.4, 0.4, 1.2]]),
     ],
 )
 def test_init_rhs(initial, equation, act_res):
@@ -62,11 +61,63 @@ def test_init_rhs(initial, equation, act_res):
 
 
 @pytest.mark.parametrize(
-    "matrix, rhs, bc_x, first",
+    "bo, equation, bc_x, bc_map, exp_rhs",
     [
-        
+        (1, ((0, 0, 1), (0, 0, 1)), np.array([[1], [5]]), [-1], [0, 0, 0, 5]),
+        (1, ((0, 0, 1), (0, 0, 1)), np.array([[-1], [-5]]), [0], [-5, 0, 0, 0]),
+        ([(1, 1, 2, 3)], ((0, 0, 1), (0, 0, 1)), np.array([[-1], [-5]]), [0], [-5, 0, 0, 0]),
+        ((1, 1), ((0, 0, 0, 1), (0, 0, 1)), np.array([[-1, 1], [25, 25]]), [0, -1], [25, 0, 0, 25]),
+        (
+            (1, 1, 2),
+            ((0, 0, 0, 0, 1), (0, 0, 1)),
+            np.array([[-1, 1, 2], [-375, -125, 125]]),
+            [0, -1, -2],
+            [-375, 0, 250, -125],
+        ),
     ],
 )
-def test_implement_bc(matrix, rhs, bc_x, first):
-    """Test if boundary conditions are implemented properly."""
-    
+def test_implement_bc_rhs(bo, equation, bc_x, bc_map, exp_rhs):
+    """Test if boundary conditions are implemented properly in the rhs.
+
+    Note: the values of bc_x corresponding to the functions were computed
+    manually using previously tested functions.
+
+    Note: bc_x was computed using previousl tested methods.
+    """
+    P = Fd_problem((0, 1), (0, 1), bo, (1), equation, dx=0.2, dt=0.2, bc_map=bc_map)
+    act_rhs, _ = P._implement_bc(np.zeros((4, 4)), np.zeros(4), bc_x, False)
+    assert np.all(act_rhs.tolist() == exp_rhs)
+
+
+bo, equation, bc_x, bc_map = (
+    (1, 1, 2),
+    ((0, 0, 0, 0, 1), (0, 0, 1)),
+    np.array([[-1, 1, 2], [-375, -125, 125]]),
+    [0, -2, -1],
+)
+P = Fd_problem((0, 1), (0, 1), bo, (1), equation, dx=0.2, dt=0.2, bc_map=bc_map)
+act_rhs, _ = P._implement_bc(np.zeros((4, 4)), np.zeros(4), bc_x, False)
+# @pytest.mark.parametrize(
+#     "bo, equation, bc_x, exp_mat, check_type",
+#     [
+#         ([(1, 1, 2, 3)], ((0, 0, 1), (0, 0, 1)), [[1], [-5]], [(3, 3, 5), (3, 2, 10), (3, 1, 15)], 0),
+#         ((1, 1, 2), ((0, 0, 0, 0, 1), (0, 0, 1)), [[-1, 1, 2], [-375, -125, 125]], np.zeros((4, 4)), 1),
+#         [(1, 1), (0, 2, 1), 3], ((0, 0, 0, 1), (0, 0, 1)), [[1, 2, 3], [-125, -25, 100]], [(3, 3, -125), (2, 3, -25)]
+#     ],
+# )
+# def test_implement_bc_mat(bo, equation, bc_x, exp_mat, check_type):
+#     """Test if boundary conditions are implemented properly in the rhs.
+
+#     Note: the values of bc_x corresponding to the functions were computed
+#     manually using previously tested functions.
+
+#     Note: bc_x was computed using previousl tested methods.
+#     """
+#     P = Fd_problem((0, 1), (0, 1), bo, (1), equation, dx=0.2, dt=0.2)
+#     _, act_mat = P._implement_bc(np.zeros((4, 4)), np.zeros(4), bc_x, True)
+#     print(act_mat)
+#     if check_type:
+#         assert np.all(act_mat == exp_mat)
+#     else:
+#         for elem in exp_mat:
+#             assert elem[2] == act_mat[elem[0], elem[1]]

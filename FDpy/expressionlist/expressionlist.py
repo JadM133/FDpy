@@ -162,7 +162,11 @@ class ExpressionList:
             mat_dict = (t_max - self).expr_dict
             rhs_x = None
             bc_x = self.expr_dict
-            del bc_x[0]
+            try:
+                bc_x[0]
+                del bc_x[0]
+            except (KeyError):
+                pass
             return mat_dict, rhs_x, rhs_t, bc_x
         elif method_time == "exp":
             mat_dict = {0: t_dict.get(k_max)}
