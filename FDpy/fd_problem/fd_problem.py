@@ -48,9 +48,9 @@ class Fd_problem:
         self,
         domain: list,
         interval: list,
-        boundary: list,
-        initial: list,
         equation: list,
+        boundary=None,
+        initial=None,
         dx=0.1,
         dt=0.1,
         method_fd="imp",
@@ -64,7 +64,8 @@ class Fd_problem:
         self.dt = dt
         if self.dx <= 0 or self.dt <= 0:
             raise ValueError(f"Increments can not be negative, specified dx = {self.dx} and dt = {self.dt}")
-        self.Nx = self._create_mesh()
+        if boundary is not None:
+            self.Nx = self._create_mesh()
         if isinstance(boundary, (int, float)):
             self.boundary = [range(boundary, boundary + 1)]
         elif boundary is not None:
@@ -144,7 +145,7 @@ class Fd_problem:
         xf = self.domain[1]
         Nx = int(np.round((xf - x0) / self.dx - 1))
         self.dx = (xf - x0) / (Nx + 1)
-        return Nx
+        return Nx + (2 - len(self.boundary))
 
     def _create_rhs(self, rhs_x, rhs_t, prev_times):
         """Create the rhs from previously computed values."""
@@ -182,11 +183,11 @@ class Fd_problem:
                     rhs[swap * idx] += node_vals_x[count] * self.boundary[find][0]
                 except IndexError:
                     raise ValueError("Wrong BCs were provided, run self.info() for more details.")
-                chosen += -swap
                 if first:
                     for idx2 in range(len(self.boundary[find]) - 1):
                         new_idx = -(idx2 + 1) if swap == -1 else idx2
                         matrix[swap * idx, new_idx] += -node_vals_x[count] * self.boundary[find][idx2 + 1]
+                chosen += -swap
         return rhs, matrix
 
     def _init_rhs(self):
@@ -210,25 +211,69 @@ class Fd_problem:
         return res
 
     def info(self):
-        bc_x, rhs_t = self.forward_in_time(sanity=True)
+        """Provide Information about boundary/initial conditions needed."""
+        bc_x, rhs_t, expr_x, expr_t = self.forward_in_time(sanity=True)
         p = int(sum(bc_x[0] > 0))
         n = int(sum(bc_x[0] < 0))
         p_vec = np.arange(-p, 0)
         n_vec = np.arange(0, n)
         keys_t = rhs_t[0]
+        print("****************SUMMARY**************")
+        print(f"Left hand side: {expr_x}")
+        print(f"Right hand side: {expr_t}")
         print(f"BC are needed at the following points from the right: {p_vec}")
         print(f"And these from the left: {n_vec}")
         print(f"IC are needed at the following times: {keys_t}")
         return p_vec, n_vec, keys_t
 
-    def forward_in_time(self, verbose=False, sanity=False):
-        mat_entries = utils._equ_to_expr(
-            self.equation, self.method[0], self.method[1], self.dx, self.dt, time=self.method_fd, verbose=verbose
+    def add(self, boundary=None, initial=None, bc_map=None):
+        """Allow the user to give bc and ic not previosuly specified when initializing.
+
+        Note: This is useful if the user wants to use the function self.info() to know
+        which boundary/initial conditions are needed.
+        """
+        if isinstance(boundary, (int, float)):
+            self.boundary = [range(boundary, boundary + 1)]
+        elif boundary is not None:
+            self.boundary = [elem if isinstance(elem, tuple) else range(elem, elem + 1) for elem in boundary]
+        try:
+            len(initial)
+        except TypeError:
+            if initial is not None:
+                initial = [initial]
+        self.Nx = self._create_mesh()
+        if initial is not None:
+            self.initial = [np.ones(self.Nx) * elem if isinstance(elem, (int, float)) else elem for elem in initial]
+            self.initial = [
+                postvisitor(
+                    elem,
+                    evaluate,
+                    symbol_map={"x": np.linspace(self.domain[0] + self.dx, self.domain[1] - self.dx, self.Nx)},
+                )
+                if isinstance(elem, Expressions)
+                else elem
+                for elem in self.initial
+            ]
+        self.bc_map = bc_map
+        self._check_input()
+
+    def forward_in_time(self, verbose=False, sanity=False, acc_x=2, acc_t=1):
+        """Step in time to find solution at all times."""
+        mat_entries, expr_x, expr_t = utils._equ_to_expr(
+            self.equation,
+            acc_x,
+            acc_t,
+            self.method[0],
+            self.method[1],
+            self.dx,
+            self.dt,
+            time=self.method_fd,
+            verbose=verbose,
         )
         mat, rhs_x, rhs_t, bc_x = utils._exprlist_to_mat(mat_entries, self.method_fd)
 
         if sanity:
-            return bc_x, rhs_t
+            return bc_x, rhs_t, expr_x, expr_t
         if len(self.boundary) != len(bc_x[0]):
             raise ValueError("Wrong number of boundary conditions. Run self.bc_info for more details.")
         if len(self.initial) != len(rhs_t[0]):
@@ -238,7 +283,10 @@ class Fd_problem:
         mat_u = self.initial  # Matrix that will store results for all time.
         first = True
         prev_times = deque(self._init_rhs())
-        for _ in np.arange(self.interval[0] + self.dt * (len(self.equation[1]) - 2), self.interval[1], self.dt):
+        print("Solving the matrix system for all times...")
+        for _ in np.arange(
+            self.interval[0] + self.dt * (len(self.equation[1]) - 2), self.interval[1] + self.dt, self.dt
+        ):
             rhs = self._create_rhs(rhs_x, rhs_t, prev_times)
             rhs, matrix = self._implement_bc(matrix, rhs, bc_x, first)
             first = False
@@ -247,5 +295,47 @@ class Fd_problem:
             prev_times.popleft()
             mat_u.append(u)
         self.solution = mat_u
-        start_animation(self.domain, self.dx, mat_u, self.boundary)
         return mat_u
+
+    def post_process(
+        self,
+        mat_u,
+        exact=None,
+        frames=None,
+        interval=800,
+        xlabel="X",
+        ylabel="U",
+        label="Approx.",
+        exact_label="Exact",
+        xlim=None,
+        ylim=None,
+        fps=500,
+        save=False,
+        filename=None,
+        error=False,
+        anim=True
+    ):
+        """Plot the solution for all times in a GIF."""
+        return start_animation(
+            self.domain,
+            self.interval,
+            self.dx,
+            self.dt,
+            mat_u,
+            exact,
+            self.boundary,
+            self.bc_map,
+            frames,
+            interval,
+            xlabel,
+            ylabel,
+            label,
+            exact_label,
+            xlim,
+            ylim,
+            fps,
+            save,
+            filename,
+            error,
+            anim
+        )

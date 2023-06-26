@@ -168,7 +168,7 @@ def _x_or_t_to_epxr(equation, method, name, step_size, acc=2, time="imp", order_
     return expr, coeffs, order_t
 
 
-def _equ_to_expr(equation, method_x=["cen"], method_t=["for"], dx_val=0.1, dt_val=0.1, time="imp", verbose=True):
+def _equ_to_expr(equation, acc_x, acc_t, method_x=["cen"], method_t=["for"], dx_val=0.1, dt_val=0.1, time="imp", verbose=True):
     """
     Convert an Fd_problem equation to an ExpressionList.
 
@@ -216,14 +216,14 @@ def _equ_to_expr(equation, method_x=["cen"], method_t=["for"], dx_val=0.1, dt_va
     and the values specify what should be added to the matrix (e.g. 1/2dx,
     and -1/2dx for center approximation in x in this case).
     """
-    expr_t, coeffs_t, order_t = _x_or_t_to_epxr(equation[1], method_t, "dt", dt_val, acc=1, time=time)
-    expr_x, coeffs_x, _ = _x_or_t_to_epxr(equation[0], method_x, "dx", dx_val, acc=4, time=time, order_t=order_t)
+    expr_t, coeffs_t, order_t = _x_or_t_to_epxr(equation[1], method_t, "dt", dt_val, acc=acc_t, time=time)
+    expr_x, coeffs_x, _ = _x_or_t_to_epxr(equation[0], method_x, "dx", dx_val, acc=acc_x, time=time, order_t=order_t)
     if verbose:
         print("*******************Approximation*****************")
         print(f"Left hand side: {expr_x}")
         print(f"Right hand side: {expr_t}")
         print("Where U(i, j) means at point x = i*delta x and t = j * delta t")
-    return coeffs_x, coeffs_t
+    return [coeffs_x, coeffs_t], expr_x, expr_t
 
 
 def _exprlist_to_mat(mat_entries, time="imp"):
