@@ -5,7 +5,7 @@ from FDpy.utils import utils
 import numpy as np
 from scipy.sparse import diags
 from scipy.linalg import solve
-from FDpy.plotting import start_animation
+from FDpy.post_processing import start_animation
 from collections import deque
 from FDpy.treenode import postvisitor, evaluate
 from FDpy.expressions import Expressions
