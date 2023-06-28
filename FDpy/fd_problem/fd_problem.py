@@ -64,8 +64,6 @@ class Fd_problem:
         self.dt = dt
         if self.dx <= 0 or self.dt <= 0:
             raise ValueError(f"Increments can not be negative, specified dx = {self.dx} and dt = {self.dt}")
-        if boundary is not None:
-            self.Nx = self._create_mesh()
         if isinstance(boundary, (int, float)):
             self.boundary = [range(boundary, boundary + 1)]
         elif boundary is not None:
@@ -77,6 +75,8 @@ class Fd_problem:
         except TypeError:
             if initial is not None:
                 initial = [initial]
+        if boundary is not None:
+            self.Nx = self._create_mesh()
         if initial is not None:
             self.initial = [np.ones(self.Nx) * elem if isinstance(elem, (int, float)) else elem for elem in initial]
             self.initial = [
@@ -182,7 +182,7 @@ class Fd_problem:
                 try:
                     rhs[swap * idx] += node_vals_x[count] * self.boundary[find][0]
                 except IndexError:
-                    raise ValueError("Wrong BCs were provided, run self.info() for more details.")
+                    raise ValueError("Wrong BCs were provided, did you provide a bc_map?")
                 if first:
                     for idx2 in range(len(self.boundary[find]) - 1):
                         new_idx = -(idx2 + 1) if swap == -1 else idx2
@@ -210,9 +210,9 @@ class Fd_problem:
             res[:, point] = x
         return res
 
-    def info(self):
+    def info(self, acc_x=2, acc_t=1):
         """Provide Information about boundary/initial conditions needed."""
-        bc_x, rhs_t, expr_x, expr_t = self.forward_in_time(sanity=True)
+        bc_x, rhs_t, expr_x, expr_t = self.forward_in_time(acc_x=acc_x, acc_t=acc_t, sanity=True)
         p = int(sum(bc_x[0] > 0))
         n = int(sum(bc_x[0] < 0))
         p_vec = np.arange(-p, 0)
@@ -280,9 +280,10 @@ class Fd_problem:
             raise ValueError("Wrong number of initial conditions. Run self.bc_info for more details.")
 
         matrix = diags(mat[1], mat[0].astype(int), shape=(self.Nx, self.Nx)).toarray()
-        mat_u = self.initial  # Matrix that will store results for all time.
         first = True
         prev_times = deque(self._init_rhs())
+        mat_u = []
+        mat_u.append(prev_times[0])
         print("Solving the matrix system for all times...")
         for _ in np.arange(
             self.interval[0] + self.dt * (len(self.equation[1]) - 2), self.interval[1] + self.dt, self.dt
@@ -295,25 +296,26 @@ class Fd_problem:
             prev_times.popleft()
             mat_u.append(u)
         self.solution = mat_u
+        print("Done.")
         return mat_u
 
     def post_process(
         self,
         mat_u,
         exact=None,
-        frames=None,
-        interval=800,
+        reduce_frame=1,
+        interval=300,
         xlabel="X",
         ylabel="U",
         label="Approx.",
         exact_label="Exact",
         xlim=None,
         ylim=None,
-        fps=500,
+        fps=30,
         save=False,
         filename=None,
         error=False,
-        anim=True
+        anim=True,
     ):
         """Plot the solution for all times in a GIF."""
         return start_animation(
@@ -325,7 +327,7 @@ class Fd_problem:
             exact,
             self.boundary,
             self.bc_map,
-            frames,
+            reduce_frame,
             interval,
             xlabel,
             ylabel,
@@ -337,5 +339,5 @@ class Fd_problem:
             save,
             filename,
             error,
-            anim
+            anim,
         )

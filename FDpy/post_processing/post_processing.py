@@ -1,13 +1,15 @@
 """Module to animate the solution in a GIF."""
 
-
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from functools import partial
 import numpy as np
 import pathlib
 
+
 ROOT_DIRECTORY = pathlib.Path(__file__).resolve().parent.parent.parent / "sample_code"
+mpl.rcParams['animation.ffmpeg_path'] = ROOT_DIRECTORY
 
 
 def transfrom_to_mat(exact, domain, dx, interval, dt):
@@ -20,8 +22,10 @@ def transfrom_to_mat(exact, domain, dx, interval, dt):
     else:
         try:
             return np.reshape(np.array(exact), (len(x_vec), len(t_vec)))
-        except (ValueError):
-            raise ValueError(f"Wrong shape of exact solution. Specify either a function or an array of size {len(x_vec)*len(t_vec)}.")
+        except ValueError:
+            raise ValueError(
+                f"Wrong shape of exact solution. Specify either a function or an array of size {len(x_vec)*len(t_vec)}."
+            )
 
 
 def start_animation(
@@ -33,7 +37,7 @@ def start_animation(
     exact,
     boundary,
     bc_map,
-    frames,
+    reduce_frame,
     interval,
     xlabel,
     ylabel,
@@ -45,15 +49,28 @@ def start_animation(
     save,
     filename,
     error,
-    anim
+    anim,
 ):
     """Run the animation using function "animate" and allow suer to specify some parameters."""
 
-    def animate(i, domain, dx, boundary, u_mat, exact_mat, line2=None, line3=None, bc_map=None, u_with_bc=[], bc=False):
+    def animate(
+        i,
+        domain,
+        dx,
+        boundary,
+        u_mat,
+        exact_mat,
+        reduce_frame,
+        line2=None,
+        line3=None,
+        bc_map=None,
+        u_with_bc=[],
+        bc=False,
+    ):
         x0 = domain[0]
         xf = domain[1]
         x_vec = np.arange(x0, xf + dx, dx)
-        u_vec = u_mat[i]
+        u_vec = u_mat[i * reduce_frame]
         bc_map = np.array(bc_map)
         p = sum(bc_map >= 0)
         n = sum(bc_map < 0)
@@ -76,7 +93,7 @@ def start_animation(
             line2.set_xdata(x_vec)
             line2.set_ydata(u_vec)
         if line3 is not None:
-            exact_vec = exact_mat[:, i]
+            exact_vec = exact_mat[:, i * reduce_frame]
             line3.set_xdata(x_vec)
             line3.set_ydata(exact_vec)
         if bc:
@@ -92,29 +109,27 @@ def start_animation(
             line3 = ax.plot(0.0, 0.0, label=exact_label)[0]
         else:
             exact_mat = None
-            u_min = np.min(u_mat)
-            u_max = np.max(u_mat)
+            u_min = np.min(np.array(u_mat))
+            u_max = np.max(np.array(u_mat))
             line3 = None
         line2 = ax.plot(0.0, 0.0, label=label)[0]
 
         ax.set(
             xlim=[domain[0] - dx, domain[1] + dx] if xlim is None else xlim,
-            ylim=[u_min * (1 - np.sign(u_min) * 0.1), u_max * (1 + np.sign(u_max) * 0.1)]
-            if ylim is None
-            else ylim,
+            ylim=[u_min * (1 - np.sign(u_min) * 0.1), u_max * (1 + np.sign(u_max) * 0.1)] if ylim is None else ylim,
             xlabel=xlabel,
             ylabel=ylabel,
         )
         ax.legend()
-        if frames is None:
-            frames = len(u_mat)
-        print("Creating animation...")
+        frames = int(len(u_mat) / reduce_frame) - 1
+        print("Creating animation, this might take some time...")
         anim = animation.FuncAnimation(
             fig,
             partial(
                 animate,
                 domain=domain,
                 dx=dx,
+                reduce_frame=reduce_frame,
                 boundary=boundary,
                 u_mat=u_mat,
                 exact_mat=exact_mat,
@@ -127,19 +142,21 @@ def start_animation(
         )
         if save:
             if filename is None:
-                filename = "GIF_FDpy.gif"
+                filename = "GIF_FDpyn.gif"
             elif not isinstance(filename, str):
                 raise ValueError("Filename should be a string.")
             print("Saving GIF, close animation to continue...")
-            writergif = animation.PillowWriter(fps=fps)
-            anim.save(ROOT_DIRECTORY / filename, writer=writergif)
+            # writervid = animation.FFMpegWriter(fps=fps)
+            anim.save(ROOT_DIRECTORY / filename)
         plt.show()
     if exact is not None and error:
         if not anim:
             exact_mat = transfrom_to_mat(exact, domain, dx, time_interval, dt)
         u_with_bc = []
         for count, _ in enumerate(np.arange(time_interval[0], time_interval[1] + dt, dt)):
-            u_with_bc = animate(count, domain, dx, boundary, u_mat, exact_mat, bc_map=bc_map, u_with_bc=u_with_bc, bc=True)
-        return np.linalg.norm(u_with_bc-np.transpose(exact_mat))
+            u_with_bc = animate(
+                count, domain, dx, boundary, u_mat, exact_mat, bc_map=bc_map, u_with_bc=u_with_bc, bc=True
+            )
+        return np.linalg.norm(u_with_bc - np.transpose(exact_mat))
     else:
         return None
