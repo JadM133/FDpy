@@ -1,14 +1,14 @@
 """Define class for a finite difference problem."""
 
 
-from FDpy.utils import utils
+from ..utils import utils
 import numpy as np
 from scipy.sparse import diags
 from scipy.linalg import solve
-from FDpy.post_processing import start_animation
+from ..post_processing import start_animation
 from collections import deque
-from FDpy.treenode import postvisitor, evaluate
-from FDpy.expressions import Expressions
+from ..treenode import postvisitor, evaluate
+from ..expressions import Expressions
 
 
 class Fd_problem:
@@ -22,26 +22,37 @@ class Fd_problem:
     interval: list,
         Start/end times.
     boundary: list,
-        Boundary conditions (as much as the order requires).
+        Boundary conditions (as much as the order requires). These can be given as
+        a number, a tuple (representing the boundary points in function of inner points).
+        Refer to README.md for more details.
     initial: list,
-        Initial conditions (as much as the order requires).
+        Initial conditions (as much as the order requires). These can be given as constants,
+        functions of expressions, arrays (where every point is specified), or a tuple where 
+        we define an initial condition as a function of other initial conditions.
+        Refer to README.md for more details)
     equation: list,
-        Equation to be solved specified by a list of two lists for LHS/RHS (see example).
+        Equation to be solved specified by a list of two lists for LHS/RHS 
+        (see example in trail.ipynb).
     dx: float
-        Mesh size in the x-direction
+        Mesh size
     dt: float,
         Time step
     method_fd: str,
-        Method of finite difference, "imp" for implicit, "exp" for explicit.
+        Method of finite difference, "imp" for implicit, "exp" for explicit (exp is not implemented yet).
     methods_xt: list of two str lists (check example for more details)
         Specifies methods for approx. derivatives ("for" for forward,
         "bac" for backward, "cen" for center) in both space/time.
 
     Methods
     -------
-    __str__(self):
-        Return string representaion of the equaotion of the Fdproblem instance.
-    forward_in_time():
+    forward_in_time(self, verbose=False, sanity=False, acc_x=2, acc_t=1):
+        Use the problem defined and solves it on the time interval specified. The solution is returned
+        in a form of matrix of points in space and time.
+    post_process(self,mat_u,exact=None,reduce_frame=1,interval=300,xlabel="X",ylabel="U",label="Approx.",
+                    exact_label="Exact",xlim=None,ylim=None,fps=30,save=False,
+                    filename=None,error=False,anim=True,jup=False)
+        Module for postprocessing (Mainly plotting animation and compare to exact solution). There is a 
+        lot of flexibility to chose properties of the animation (hence the large number of inputs).
     """
 
     def __init__(
@@ -316,28 +327,30 @@ class Fd_problem:
         filename=None,
         error=False,
         anim=True,
+        jup=False,
     ):
         """Plot the solution for all times in a GIF."""
         return start_animation(
-            self.domain,
-            self.interval,
-            self.dx,
-            self.dt,
-            mat_u,
-            exact,
-            self.boundary,
-            self.bc_map,
-            reduce_frame,
-            interval,
-            xlabel,
-            ylabel,
-            label,
-            exact_label,
-            xlim,
-            ylim,
-            fps,
-            save,
-            filename,
-            error,
-            anim,
+            domain=self.domain,
+            time_interval=self.interval,
+            dx=self.dx,
+            dt=self.dt,
+            u_mat=mat_u,
+            exact=exact,
+            boundary=self.boundary,
+            bc_map=self.bc_map,
+            reduce_frame=reduce_frame,
+            interval=interval,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            label=label,
+            exact_label=exact_label,
+            xlim=xlim,
+            ylim=ylim,
+            fps=fps,
+            save=save,
+            filename=filename,
+            error=error,
+            anim=anim,
+            jup=jup
         )

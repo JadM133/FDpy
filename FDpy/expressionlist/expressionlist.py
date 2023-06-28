@@ -2,8 +2,8 @@
 """Define ExpressionList class which provides useful methods to create matrix/rhs."""
 
 
-from FDpy.treenode import postvisitor, evaluate
-from FDpy.expressions import Symbol
+from ..treenode import postvisitor, evaluate
+from ..expressions import Symbol
 import numpy as np
 
 

@@ -2,8 +2,8 @@
 """Module containing all utility functions that will be used by other defined classes."""
 
 
-from FDpy.expressions import Symbol
-from FDpy.expressionlist import ExpressionList
+from ..expressions import Symbol
+from ..expressionlist import ExpressionList
 import numpy as np
 
 
