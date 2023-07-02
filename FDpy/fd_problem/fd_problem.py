@@ -24,12 +24,13 @@ class Fd_problem:
     boundary: list,
         Boundary conditions (as much as the order requires). These can be given as
         a number, a tuple (representing the boundary points in function of inner points).
-        Refer to README.md for more details.
+        Refer to README.md or sample_code.ipynb for more details.
     initial: list,
         Initial conditions (as much as the order requires). These can be given as constants,
-        functions of expressions, arrays (where every point is specified), or a tuple where
-        we define an initial condition as a function of other initial conditions.
-        Refer to README.md for more details)
+        expressions (with x from the Expressions.Symbols class, name has to be 'x'), arrays
+        (where every point is specified), or a tuple where we define an initial condition as
+        a function of other initial conditions.
+        (Refer to README.md or sample_code.ipynb for more details)
     equation: list,
         Equation to be solved specified by a list of two lists for LHS/RHS
         (see example in trail.ipynb).
@@ -38,7 +39,9 @@ class Fd_problem:
     dt: float,
         Time step
     method_fd: str,
-        Method of finite difference, "imp" for implicit, "exp" for explicit (exp is not implemented yet).
+        Method of finite difference, "imp" for implicit, "exp" for explicit.
+        Note: Explicit schemes have not been heavily tested yet. Please use
+        implicit schemes for guaranteed results.
     methods_xt: list of two str lists (check example for more details)
         Specifies methods for approx. derivatives ("for" for forward,
         "bac" for backward, "cen" for center) in both space/time.
@@ -199,9 +202,9 @@ class Fd_problem:
                 elem = int(elem)
                 end = -len(right_vals) + elem
                 if end == 0:
-                    rhs_val += prev_at_m[len(left_vals) + elem:] * node_vals_x[count]
+                    rhs_val += prev_at_m[len(left_vals) + elem :] * node_vals_x[count]
                 else:
-                    rhs_val += prev_at_m[len(left_vals) + elem: -len(right_vals) + elem] * node_vals_x[count]
+                    rhs_val += prev_at_m[len(left_vals) + elem : -len(right_vals) + elem] * node_vals_x[count]
         return rhs_val
 
     def _implement_bc(self, matrix, rhs, bc_x, first):
@@ -267,7 +270,7 @@ class Fd_problem:
         keys_t = rhs_t[0]
         print("****************SUMMARY**************")
         print(f"Left hand side: {expr_x}")
-        print(f'with accuracy: {acc_x}')
+        print(f"with accuracy: {acc_x}")
         print(f"Right hand side: {expr_t}")
         print(f"with accuracy: {acc_t}")
         print(f"BC are needed at the following points from the right: {p_vec}")
