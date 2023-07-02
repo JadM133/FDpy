@@ -38,7 +38,6 @@ def start_animation(
     exact,
     boundary,
     bc_map,
-    reduce_frame,
     interval,
     xlabel,
     ylabel,
@@ -62,7 +61,6 @@ def start_animation(
         dt,
         boundary,
         u_mat,
-        reduce_frame=1,
         exact_mat=None,
         line2=None,
         line3=None,
@@ -74,7 +72,7 @@ def start_animation(
         x0 = domain[0]
         xf = domain[1]
         x_vec = np.arange(x0, xf + dx, dx)
-        u_vec = u_mat[int(i * reduce_frame)]
+        u_vec = u_mat[int(i)]
         bc_map = np.array(bc_map)
         p = sum(bc_map >= 0)
         n = sum(bc_map < 0)
@@ -97,7 +95,7 @@ def start_animation(
             line2.set_xdata(x_vec)
             line2.set_ydata(u_vec)
         if line3 is not None:
-            exact_vec = exact_mat[:, i * reduce_frame]
+            exact_vec = exact_mat[:, i]
             line3.set_xdata(x_vec)
             line3.set_ydata(exact_vec)
         if line4 is not None:
@@ -133,7 +131,7 @@ def start_animation(
             ylabel=ylabel,
         )
         ax.legend()
-        frames = int(len(u_mat) / reduce_frame) - 1
+        frames = int(len(u_mat)) - 1
         print("Creating animation...")
         anim = animation.FuncAnimation(
             fig,
@@ -144,7 +142,6 @@ def start_animation(
                 dt=dt,
                 boundary=boundary,
                 u_mat=u_mat,
-                reduce_frame=reduce_frame,
                 exact_mat=exact_mat,
                 line2=line2,
                 line3=line3,
@@ -178,7 +175,6 @@ def start_animation(
                 dt=dt,
                 boundary=boundary,
                 u_mat=u_mat,
-                reduce_frame=reduce_frame,
                 exact_mat=exact_mat,
                 bc_map=bc_map,
                 u_with_bc=u_with_bc,

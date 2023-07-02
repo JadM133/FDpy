@@ -129,7 +129,7 @@ def _to_exprlist(coeffs_at_order, points, name, step_size, time="imp", order_t=N
     return expr, dic, dic.max_key()
 
 
-def _x_or_t_to_epxr(equation, method, name, step_size, acc=2, time="imp", order_t=None):
+def _x_or_t_to_epxrlist(equation, method, name, step_size, acc=2, time="imp", order_t=None):
     """Transform one side of the equation to an expression and dict.
 
     This function is divided into 3 main parts. First, specifying required
@@ -168,7 +168,7 @@ def _x_or_t_to_epxr(equation, method, name, step_size, acc=2, time="imp", order_
     return expr, coeffs, order_t
 
 
-def _equ_to_expr(equation, acc_x, acc_t, method_x=["cen"], method_t=["for"], dx_val=0.1, dt_val=0.1, time="imp", verbose=True):
+def _equ_to_exprlist(equation, acc_x, acc_t, method_x=["cen"], method_t=["for"], dx_val=0.1, dt_val=0.1, time="imp", verbose=True):
     """
     Convert an Fd_problem equation to an ExpressionList.
 
@@ -216,14 +216,14 @@ def _equ_to_expr(equation, acc_x, acc_t, method_x=["cen"], method_t=["for"], dx_
     and the values specify what should be added to the matrix (e.g. 1/2dx,
     and -1/2dx for center approximation in x in this case).
     """
-    expr_t, coeffs_t, order_t = _x_or_t_to_epxr(equation[1], method_t, "dt", dt_val, acc=acc_t, time=time)
-    expr_x, coeffs_x, _ = _x_or_t_to_epxr(equation[0], method_x, "dx", dx_val, acc=acc_x, time=time, order_t=order_t)
+    expr_t, mat_t, order_t = _x_or_t_to_epxrlist(equation[1], method_t, "dt", dt_val, acc=acc_t, time=time)
+    expr_x, mat_x, _ = _x_or_t_to_epxrlist(equation[0], method_x, "dx", dx_val, acc=acc_x, time=time, order_t=order_t)
     if verbose:
         print("*******************Approximation*****************")
         print(f"Left hand side: {expr_x}")
         print(f"Right hand side: {expr_t}")
         print("Where U(i, j) means at point x = i*delta x and t = j * delta t")
-    return [coeffs_x, coeffs_t], expr_x, expr_t
+    return [mat_x, mat_t], expr_x, expr_t
 
 
 def _exprlist_to_mat(mat_entries, time="imp"):
@@ -239,8 +239,12 @@ def _exprlist_to_mat(mat_entries, time="imp"):
     x_entries, t_entries = mat_entries
     mat_dict, rhs_x, rhs_t, bc_x = x_entries.combine_x_and_t(t_entries, time)
     mat_array = np.transpose(np.array(list(mat_dict.items())))
-    rhs_t = np.transpose(np.sort(np.array(list(rhs_t.items())), axis=0))
+    dummy = np.array(list(rhs_t.items()))
+    rhs_t = np.transpose(dummy[dummy[:, 0].argsort()])
     if rhs_x is not None:
-        rhs_x = np.transpose(np.sort(np.array(list(rhs_x.items())), axis=0))
-    bc_x = np.transpose(np.sort(np.array(list(bc_x.items())), axis=0))
+        dummy = np.array(list(rhs_x.items()))
+        rhs_x = np.transpose(dummy[dummy[:, 0].argsort()])
+    if bc_x is not None:
+        dummy = np.array(list(bc_x.items()))
+        bc_x = np.transpose(dummy[dummy[:, 0].argsort()])
     return mat_array, rhs_x, rhs_t, bc_x

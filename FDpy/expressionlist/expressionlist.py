@@ -155,26 +155,23 @@ class ExpressionList:
         """
         t_dict = other.expr_dict
         k_max = max(k for k in t_dict.keys())
+        bc_x = self.expr_dict.copy()
+        try:
+            bc_x[0]
+            del bc_x[0]
+        except (KeyError):
+            pass
         if method_time == "imp":
             t_max = ExpressionList({0: t_dict.get(k_max)})
             del t_dict[k_max]
             rhs_t = {k: -v for k, v in t_dict.items()}
             mat_dict = (t_max - self).expr_dict
             rhs_x = None
-            bc_x = self.expr_dict
-            try:
-                bc_x[0]
-                del bc_x[0]
-            except (KeyError):
-                pass
             return mat_dict, rhs_x, rhs_t, bc_x
         elif method_time == "exp":
             mat_dict = {0: t_dict.get(k_max)}
             del t_dict[k_max]
             rhs_t = {k: -v for k, v in t_dict.items()}
-            rhs_x = self.expr_dict
-            del rhs_x[0]
-            bc_x = None
-            return mat_dict, rhs_x, rhs_t, bc_x
+            return mat_dict, self.expr_dict, rhs_t, bc_x
         else:
             raise NotImplementedError(f"Only exp and imp methods implemented, not {method_time}")

@@ -5,6 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "FDpy"
 version = "0.1"
+dependencies = ["numpy", "scipy"]
 
 [tool.black]
 line-length = 120

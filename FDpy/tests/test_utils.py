@@ -2,7 +2,7 @@
 
 
 import pytest
-from FDpy.utils import _x_or_t_to_epxr
+from FDpy.utils import _x_or_t_to_epxrlist
 from FDpy.expressionlist import ExpressionList
 import numpy as np
 
@@ -51,9 +51,9 @@ import numpy as np
         ),
     ],
 )
-def test_t_x_or_t_to_epxr(eq, methodt, acc, dic, str_val):
+def test_t_x_or_t_to_epxrlist(eq, methodt, acc, dic, str_val):
     """Test the function that generates Expression and ExpressionList from the (t) part of the equation."""
-    act_result = _x_or_t_to_epxr(eq, methodt, "dt", 0.1, acc=acc)
+    act_result = _x_or_t_to_epxrlist(eq, methodt, "dt", 0.1, acc=acc)
     act_expr, act_coef, _ = act_result
     act_coef = act_coef.round_vals()
     true_coef = ExpressionList(dic)
@@ -61,7 +61,7 @@ def test_t_x_or_t_to_epxr(eq, methodt, acc, dic, str_val):
 
 
 eq, methodt, acc = (0, 0, 0, 1), "for", 3
-expr, _, _ = _x_or_t_to_epxr(eq, methodt, "dt", 0.1, acc=acc)
+expr, _, _ = _x_or_t_to_epxrlist(eq, methodt, "dt", 0.1, acc=acc)
 print(expr)
 
 
@@ -112,9 +112,9 @@ print(expr)
         ),
     ],
 )
-def test_x_x_or_t_to_epxr(eq, methodx, acc, order_t, dic, str_val):
+def test_x_x_or_t_to_epxrlist(eq, methodx, acc, order_t, dic, str_val):
     """Test the function that generates Expression and ExpressionList from the (x) part of the equation."""
-    act_result = _x_or_t_to_epxr(eq, methodx, "dx", 0.1, acc=acc, order_t=order_t)
+    act_result = _x_or_t_to_epxrlist(eq, methodx, "dx", 0.1, acc=acc, order_t=order_t)
     act_expr, act_coef, _ = act_result
     act_coef = act_coef.round_vals()
     true_coef = ExpressionList(dic)

@@ -27,11 +27,11 @@ class Fd_problem:
         Refer to README.md for more details.
     initial: list,
         Initial conditions (as much as the order requires). These can be given as constants,
-        functions of expressions, arrays (where every point is specified), or a tuple where 
+        functions of expressions, arrays (where every point is specified), or a tuple where
         we define an initial condition as a function of other initial conditions.
         Refer to README.md for more details)
     equation: list,
-        Equation to be solved specified by a list of two lists for LHS/RHS 
+        Equation to be solved specified by a list of two lists for LHS/RHS
         (see example in trail.ipynb).
     dx: float
         Mesh size
@@ -51,8 +51,8 @@ class Fd_problem:
     post_process(self,mat_u,exact=None,reduce_frame=1,interval=300,xlabel="X",ylabel="U",label="Approx.",
                     exact_label="Exact",xlim=None,ylim=None,fps=30,save=False,
                     filename=None,error=False,anim=True,jup=False)
-        Module for postprocessing (Mainly plotting animation and compare to exact solution). There is a 
-        lot of flexibility to chose properties of the animation (hence the large number of inputs).
+        FUnction for postprocessing (Mainly plotting animation and compare to exact solution). There is a
+        lot of flexibility to chose properties of the animation (hence the large number of input arguments).
     """
 
     def __init__(
@@ -119,7 +119,7 @@ class Fd_problem:
 
         return eq_str
 
-    def _check_input(self):
+    def _check_input(self, after=False):
         """Check if input given is in suitable shape/type."""
         if self.domain[0] >= self.domain[1]:
             raise ValueError("Provide domain in increasing order.")
@@ -149,6 +149,14 @@ class Fd_problem:
             raise ValueError("Entry 0 of method can only be for, bac, or cen in a string.")
         if self.method[1] != "for" and self.method[1] != "bac" and self.method[1] != "cen":
             raise ValueError("Entry 1 of method can only be for, bac, or cen in a string.")
+        if after:
+            if self.bc_map is None or len(self.bc_map) != len(self.boundary):
+                raise ValueError("Something went wrong with bc_map, did you provide it?")
+            if len(self.equation[0]) < 2 or len(self.equation[1]) < 2:
+                raise NotImplementedError("The equation needs to be at least first order in time and space.")
+            for elem in self.boundary:
+                if len(elem) >= self.Nx + 1:
+                    raise ValueError("Boundary conditions can not depend on boundary conditions on the other side.")
 
     def _create_mesh(self):
         """Create a mesh by specifying start, end points and number of inner points."""
@@ -158,14 +166,42 @@ class Fd_problem:
         self.dx = (xf - x0) / (Nx + 1)
         return Nx + (2 - len(self.boundary))
 
-    def _create_rhs(self, rhs_x, rhs_t, prev_times):
+    def _create_rhs(self, rhs_x, rhs_t, bc_x, prev_times):
         """Create the rhs from previously computed values."""
         rhs_val = np.zeros(self.Nx)
         node_vals_t = rhs_t[1]
         for count in range(len(rhs_t[0])):
             rhs_val += prev_times[count] * node_vals_t[count]
         if rhs_x is not None:  # for explicit, not implemented yet
-            pass
+            node_vals_x = rhs_x[1]
+            prev_at_m = prev_times[np.where(rhs_t[0] == 0)[0][0]]
+            p = sum(bc_x[0] > 0)
+            n = sum(bc_x[0] < 0)
+            left_vals = []
+            right_vals = []
+            for idx in bc_x[0]:
+                loc = idx + n if idx < 0 else idx - (p + 1)
+                find = int(np.where(self.bc_map == loc)[0][0])
+                if find == []:
+                    raise ValueError(
+                        "bc_map do not correspond to the right boundary conditions. Run self.info() for help."
+                    )
+                to_mult = self.boundary[find][0]
+                for counter, dummy in enumerate(self.boundary[find][1:]):
+                    count = counter if idx < 0 else -(counter + 1)
+                    to_mult += dummy * prev_at_m[count]
+                if idx < 0:
+                    left_vals.append(to_mult)
+                else:
+                    right_vals.append(to_mult)
+            prev_at_m = np.hstack((left_vals, prev_at_m, right_vals))
+            for count, elem in enumerate(rhs_x[0]):
+                elem = int(elem)
+                end = -len(right_vals) + elem
+                if end == 0:
+                    rhs_val += prev_at_m[len(left_vals) + elem:] * node_vals_x[count]
+                else:
+                    rhs_val += prev_at_m[len(left_vals) + elem: -len(right_vals) + elem] * node_vals_x[count]
         return rhs_val
 
     def _implement_bc(self, matrix, rhs, bc_x, first):
@@ -231,7 +267,9 @@ class Fd_problem:
         keys_t = rhs_t[0]
         print("****************SUMMARY**************")
         print(f"Left hand side: {expr_x}")
+        print(f'with accuracy: {acc_x}')
         print(f"Right hand side: {expr_t}")
+        print(f"with accuracy: {acc_t}")
         print(f"BC are needed at the following points from the right: {p_vec}")
         print(f"And these from the left: {n_vec}")
         print(f"IC are needed at the following times: {keys_t}")
@@ -266,11 +304,11 @@ class Fd_problem:
                 for elem in self.initial
             ]
         self.bc_map = bc_map
-        self._check_input()
+        self._check_input(after=True)
 
     def forward_in_time(self, verbose=False, sanity=False, acc_x=2, acc_t=1):
         """Step in time to find solution at all times."""
-        mat_entries, expr_x, expr_t = utils._equ_to_expr(
+        mat_entries, expr_x, expr_t = utils._equ_to_exprlist(
             self.equation,
             acc_x,
             acc_t,
@@ -299,8 +337,9 @@ class Fd_problem:
         for _ in np.arange(
             self.interval[0] + self.dt * (len(self.equation[1]) - 2), self.interval[1] + self.dt, self.dt
         ):
-            rhs = self._create_rhs(rhs_x, rhs_t, prev_times)
-            rhs, matrix = self._implement_bc(matrix, rhs, bc_x, first)
+            rhs = self._create_rhs(rhs_x, rhs_t, bc_x, prev_times)
+            if self.method_fd == "imp":
+                rhs, matrix = self._implement_bc(matrix, rhs, bc_x, first)
             first = False
             u = solve(matrix, rhs)
             prev_times.append(u)
@@ -314,7 +353,6 @@ class Fd_problem:
         self,
         mat_u,
         exact=None,
-        reduce_frame=1,
         interval=300,
         xlabel="X",
         ylabel="U",
@@ -323,7 +361,7 @@ class Fd_problem:
         xlim=None,
         ylim=None,
         fps=30,
-        save=False,
+        save=True,
         filename=None,
         error=False,
         anim=True,
@@ -339,7 +377,6 @@ class Fd_problem:
             exact=exact,
             boundary=self.boundary,
             bc_map=self.bc_map,
-            reduce_frame=reduce_frame,
             interval=interval,
             xlabel=xlabel,
             ylabel=ylabel,
@@ -352,5 +389,5 @@ class Fd_problem:
             filename=filename,
             error=error,
             anim=anim,
-            jup=jup
+            jup=jup,
         )
