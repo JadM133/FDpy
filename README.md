@@ -13,7 +13,7 @@ $$U(t=0)= c_1+c_2U(t=0)+c_3U(x=2\Delta t)$$
 Where the user can specify as many tuples as they want. The program will make sure that the system of equations is well define and will raise an error if it is over/underdefined.
 
 # Installation
-pip install FDpy
+pip install git+https://github.com/JadM133/FDpy.git 
 # Content
 The library first includes the finite difference solver which automatically chooses the finite difference scheme based on the specified order of the equation and accuracy needed (following [1]).
 Second, the library also includes a post-processing module where solutions can be animated and compared to the theoritcal solution if available.
